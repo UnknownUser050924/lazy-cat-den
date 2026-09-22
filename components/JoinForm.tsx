@@ -64,7 +64,7 @@ export function JoinForm({
         <p className="mt-2 text-sm text-muted">两个人的小房间 · a room for two</p>
         <p className="mt-2 text-xs">
           <a className="font-bold text-rose" href="/guide">
-            Guide
+            怎么玩
           </a>
         </p>
       </div>

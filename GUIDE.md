@@ -209,7 +209,8 @@ People open these in a phone browser. You can just use the API.
 - /calendar is the little calendar
 - /corner is My Little Corner
 - /memories is the shared story
-- /guide is this guide
+- /guide is the short page for the two people
+- /guide/helpers is this guide, for an assistant
 
 ## 5. Please be careful
 
