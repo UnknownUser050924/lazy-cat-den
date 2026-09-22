@@ -1,16 +1,28 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { DRAW_TYPES, NOTE_COLORS } from "./constants";
-import type { Room, RoomAction } from "./types";
+import type { Member, Room, RoomAction } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "rooms.json");
 
-let chain: Promise<unknown> = Promise.resolve();
+type GlobalStore = {
+  rooms: Record<string, Room>;
+  chain: Promise<unknown>;
+};
+
+function store(): GlobalStore {
+  const g = globalThis as typeof globalThis & { __lazyCatDen?: GlobalStore };
+  if (!g.__lazyCatDen) {
+    g.__lazyCatDen = { rooms: {}, chain: Promise.resolve() };
+  }
+  return g.__lazyCatDen;
+}
 
 function withLock<T>(fn: () => Promise<T>): Promise<T> {
-  const run = chain.then(fn, fn);
-  chain = run.then(
+  const s = store();
+  const run = s.chain.then(fn, fn);
+  s.chain = run.then(
     () => undefined,
     () => undefined,
   );
@@ -52,6 +64,27 @@ function emptyRoom(id: string): Room {
   };
 }
 
+function cloneRoom(room: Room): Room {
+  return JSON.parse(JSON.stringify(room)) as Room;
+}
+
+function mergeMembers(a: Member[], b: Member[]): Member[] {
+  const map = new Map<string, Member>();
+  for (const member of [...a, ...b]) {
+    const prev = map.get(member.displayName);
+    if (!prev || member.lastSeen >= prev.lastSeen) {
+      map.set(member.displayName, member);
+    }
+  }
+  return [...map.values()].sort((x, y) => x.displayName.localeCompare(y.displayName, "zh"));
+}
+
+function mergeById<T extends { id: string; createdAt: number }>(a: T[], b: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const item of [...a, ...b]) map.set(item.id, item);
+  return [...map.values()].sort((x, y) => y.createdAt - x.createdAt);
+}
+
 function applyDecay(room: Room) {
   const now = Date.now();
   const today = todayKey(now);
@@ -76,9 +109,10 @@ function touchMember(room: Room, displayName: string) {
   } else {
     room.members.push({ displayName, lastSeen: now });
   }
+  room.members = mergeMembers(room.members, []);
 }
 
-async function readAll(): Promise<Record<string, Room>> {
+async function readDisk(): Promise<Record<string, Room>> {
   try {
     const raw = await fs.readFile(DATA_FILE, "utf8");
     return JSON.parse(raw) as Record<string, Room>;
@@ -87,25 +121,55 @@ async function readAll(): Promise<Record<string, Room>> {
   }
 }
 
-async function writeAll(rooms: Record<string, Room>) {
+async function writeDisk(rooms: Record<string, Room>) {
   await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(rooms, null, 2), "utf8");
+  const tmp = `${DATA_FILE}.${process.pid}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(rooms, null, 2), "utf8");
+  await fs.rename(tmp, DATA_FILE);
+}
+
+async function loadRoom(id: string): Promise<Room> {
+  const mem = store().rooms;
+  if (mem[id]) return cloneRoom(mem[id]);
+
+  const disk = await readDisk();
+  const room = cloneRoom(disk[id] ?? emptyRoom(id));
+  mem[id] = cloneRoom(room);
+  return room;
+}
+
+async function saveRoom(room: Room) {
+  const mem = store().rooms;
+  // Pull any members another worker may have written to disk.
+  const disk = await readDisk();
+  const onDisk = disk[room.id];
+  if (onDisk) {
+    room.members = mergeMembers(onDisk.members, room.members);
+    room.questions = mergeById(onDisk.questions, room.questions);
+    room.wishlist = mergeById(onDisk.wishlist, room.wishlist);
+    room.notes = mergeById(onDisk.notes, room.notes);
+    room.draws = mergeById(onDisk.draws, room.draws);
+    room.cat.lastCheckin = Math.max(room.cat.lastCheckin, onDisk.cat.lastCheckin);
+    room.cat.lastPat = Math.max(room.cat.lastPat, onDisk.cat.lastPat);
+  }
+
+  mem[room.id] = cloneRoom(room);
+  disk[room.id] = cloneRoom(room);
+  await writeDisk(disk);
 }
 
 export async function getRoom(id: string): Promise<Room> {
   return withLock(async () => {
-    const rooms = await readAll();
-    const room = applyDecay(rooms[id] ?? emptyRoom(id));
-    rooms[id] = room;
-    await writeAll(rooms);
-    return room;
+    // Read-only path: do not write on every poll (that was wiping concurrent joins).
+    const room = applyDecay(await loadRoom(id));
+    store().rooms[id] = cloneRoom(room);
+    return cloneRoom(room);
   });
 }
 
 export async function applyAction(id: string, action: RoomAction): Promise<Room> {
   return withLock(async () => {
-    const rooms = await readAll();
-    const room = applyDecay(rooms[id] ?? emptyRoom(id));
+    const room = applyDecay(await loadRoom(id));
     const now = Date.now();
     const name = action.displayName.trim().slice(0, 24);
     if (!name) throw new Error("Display name required");
@@ -225,8 +289,7 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         throw new Error("Unknown action");
     }
 
-    rooms[id] = room;
-    await writeAll(rooms);
-    return room;
+    await saveRoom(room);
+    return cloneRoom(room);
   });
 }

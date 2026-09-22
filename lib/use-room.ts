@@ -61,15 +61,31 @@ export function useRoom(roomId: string, displayName: string | null) {
     };
   }, [refresh]);
 
+  // Keep checking in until this person appears in the room member list.
   useEffect(() => {
     if (!displayName) return;
-    const key = `checkin:${roomId}:${displayName}`;
-    if (sessionStorage.getItem(key) === "1") return;
-    sessionStorage.setItem(key, "1");
-    act({ type: "checkin" }).catch(() => undefined);
-    // first check-in only
+    let cancelled = false;
+
+    async function ensurePresent() {
+      try {
+        const latest = room ?? (await refresh());
+        if (cancelled) return;
+        const listed = latest.members.some((m) => m.displayName === displayName);
+        if (listed) return;
+        await act({ type: "checkin" });
+      } catch {
+        // Retry on the next poll cycle.
+      }
+    }
+
+    ensurePresent();
+    const timer = setInterval(ensurePresent, 4000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayName, roomId]);
+  }, [displayName, roomId, room?.members.length]);
 
   return { room, error, busy, refresh, act, setError };
 }

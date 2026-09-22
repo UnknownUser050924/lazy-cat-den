@@ -54,10 +54,12 @@ export default function CottagePage() {
           </button>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          {room.members.length === 0 ? (
-            <p className="text-sm text-muted">还很安静 still quiet</p>
-          ) : (
-            room.members.map((member) => (
+          {(() => {
+            const people = [...room.members];
+            if (!people.some((m) => m.displayName === displayName)) {
+              people.unshift({ displayName, lastSeen: Date.now() });
+            }
+            return people.map((member) => (
               <span
                 key={member.displayName}
                 className={`rounded-full px-3 py-1 text-sm ${
@@ -67,9 +69,10 @@ export default function CottagePage() {
                 }`}
               >
                 {member.displayName}
+                {member.displayName === displayName ? " · 你" : ""}
               </span>
-            ))
-          )}
+            ));
+          })()}
         </div>
       </section>
 
