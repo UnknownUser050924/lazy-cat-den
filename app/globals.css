@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+:root {
+  --cream: #fbf6f0;
+  --blush: #f7d6d9;
+  --rose: #d98993;
+  --rose-deep: #c36b76;
+  --ink: #4a3b36;
+  --muted: #8a736c;
+  --card: #fffaf6;
+  --line: rgba(195, 107, 118, 0.16);
+}
+
+@theme inline {
+  --color-cream: var(--cream);
+  --color-blush: var(--blush);
+  --color-rose: var(--rose);
+  --color-rose-deep: var(--rose-deep);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --font-sans: var(--font-nunito), var(--font-noto), ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 10% -10%, #ffe4e8 0%, transparent 55%),
+    radial-gradient(900px 400px at 110% 0%, #fde8c8 0%, transparent 50%),
+    var(--cream);
+  color: var(--ink);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 30px rgba(74, 59, 54, 0.06);
+}
+
+.soft-btn {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.soft-btn:active {
+  transform: scale(0.98);
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-6deg);
+  }
+  75% {
+    transform: rotate(6deg);
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.floaty {
+  animation: floaty 4s ease-in-out infinite;
+}
+
+.wiggle {
+  animation: wiggle 0.45s ease-in-out;
+}
+
+.pop-in {
+  animation: pop 0.35s ease both;
+}
