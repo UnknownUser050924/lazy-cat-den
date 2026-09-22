@@ -4,10 +4,24 @@ export const DEFAULT_ROOM = "yiyi-and-you";
 export const DEFAULT_NAMES = ["嘉怡", "宝宝"] as const;
 
 export const DRAW_TYPES = [
-  { id: "who-pays", zh: "谁请客", en: "Who pays", emoji: "🍜" },
-  { id: "who-dinner", zh: "谁选晚餐", en: "Who chooses dinner", emoji: "🍱" },
-  { id: "who-movie", zh: "谁选电影", en: "Who chooses movie", emoji: "🎬" },
-  { id: "who-texts", zh: "今晚谁先传讯", en: "Who texts first tonight", emoji: "💌" },
+  { id: "who-pays", zh: "谁请客", en: "Who pays", emoji: "🍜", kind: "person" },
+  { id: "who-dinner", zh: "谁选晚餐", en: "Who chooses dinner", emoji: "🍱", kind: "person" },
+  { id: "who-movie", zh: "谁选电影", en: "Who chooses movie", emoji: "🎬", kind: "person" },
+  { id: "who-texts", zh: "今晚谁先传讯", en: "Who texts first tonight", emoji: "💌", kind: "person" },
+  { id: "who-cooks", zh: "谁做饭", en: "Who cooks", emoji: "🍳", kind: "person" },
+  { id: "who-song", zh: "谁选歌", en: "Who picks the song", emoji: "🎵", kind: "person" },
+  { id: "who-game", zh: "谁选游戏", en: "Who picks the game", emoji: "🎮", kind: "person" },
+  { id: "who-dessert", zh: "谁选甜品", en: "Who picks dessert", emoji: "🍰", kind: "person" },
+  { id: "who-photo", zh: "谁先拍照", en: "Who takes the photo", emoji: "📷", kind: "person" },
+  { id: "who-plan", zh: "谁安排今天", en: "Who plans today", emoji: "📅", kind: "person" },
+  { id: "who-hug", zh: "谁先抱一下", en: "Who hugs first", emoji: "🤗", kind: "person" },
+  { id: "who-walk", zh: "谁说出发", en: "Who says let's go", emoji: "👟", kind: "person" },
+  { id: "dinner", zh: "今晚吃什么", en: "What's for dinner", emoji: "🍲", kind: "jar", jar: "dinner" },
+  { id: "movie-night", zh: "看什么", en: "What to watch", emoji: "🍿", kind: "jar", jar: "movie" },
+  { id: "drink", zh: "喝什么", en: "What to drink", emoji: "🧋", kind: "jar", jar: "drink" },
+  { id: "snack", zh: "吃什么零食", en: "What snack", emoji: "🍪", kind: "jar", jar: "snack" },
+  { id: "date", zh: "约会做什么", en: "Date idea", emoji: "🌷", kind: "jar", jar: "date" },
+  { id: "weekend", zh: "周末做什么", en: "Weekend plan", emoji: "🌤", kind: "jar", jar: "weekend" },
 ] as const;
 
 export const TONIGHT_IDEAS = [
@@ -20,6 +34,58 @@ export const TONIGHT_IDEAS = [
   { id: "questions", zh: "互相问三个问题", en: "Ask each other 3 questions" },
   { id: "nothing", zh: "什么都不做", en: "Do absolutely nothing" },
 ] as const;
+
+export const DRAW_JARS = {
+  dinner: [
+    { zh: "火锅", en: "Hotpot" },
+    { zh: "拉面", en: "Ramen" },
+    { zh: "炒饭", en: "Fried rice" },
+    { zh: "披萨", en: "Pizza" },
+    { zh: "寿司", en: "Sushi" },
+    { zh: "鸡排", en: "Chicken chop" },
+    { zh: "粥", en: "Porridge" },
+    { zh: "烧烤", en: "Grill" },
+    { zh: "马来餐", en: "Malaysian food" },
+    { zh: "随便吃", en: "Whatever is easy" },
+  ],
+  movie: [
+    { zh: "喜剧", en: "Comedy" },
+    { zh: "爱情", en: "Romance" },
+    { zh: "动画", en: "Animation" },
+    { zh: "悬疑", en: "Mystery" },
+    { zh: "重看一部老片", en: "Rewatch an old one" },
+    { zh: "短片就好", en: "Something short" },
+  ],
+  drink: [
+    { zh: "奶茶", en: "Milk tea" },
+    { zh: "咖啡", en: "Coffee" },
+    { zh: "汽水", en: "Soda" },
+    { zh: "热水", en: "Hot water" },
+    { zh: "果汁", en: "Juice" },
+  ],
+  snack: [
+    { zh: "薯条", en: "Fries" },
+    { zh: "饼干", en: "Cookies" },
+    { zh: "冰淇淋", en: "Ice cream" },
+    { zh: "水果", en: "Fruit" },
+    { zh: "巧克力", en: "Chocolate" },
+  ],
+  date: [
+    { zh: "散步", en: "Take a walk" },
+    { zh: "看电影", en: "Watch a movie" },
+    { zh: "一起打游戏", en: "Play a game" },
+    { zh: "吃甜的", en: "Get something sweet" },
+    { zh: "待在家里", en: "Stay home" },
+    { zh: "打个电话", en: "Call each other" },
+  ],
+  weekend: [
+    { zh: "睡懒觉", en: "Sleep in" },
+    { zh: "出门吃饭", en: "Eat out" },
+    { zh: "看电影", en: "Watch a movie" },
+    { zh: "什么都不做", en: "Do nothing" },
+    { zh: "去逛一下", en: "Wander around" },
+  ],
+} as const;
 
 export const COUPLE_STATUSES = [
   { id: "miss", zh: "想你了", en: "Missing you" },

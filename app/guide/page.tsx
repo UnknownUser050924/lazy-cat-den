@@ -13,6 +13,7 @@ const STEPS = [
 ];
 
 const PLAY = [
+  ["聊天", "Say something"],
   ["问答", "Ask one small question"],
   ["抽签", "Let the den choose"],
   ["愿望", "Add something you want"],

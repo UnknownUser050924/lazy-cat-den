@@ -4,6 +4,7 @@ import {
   CAT_FORMS,
   COUPLE_STATUSES,
   CORNER_OBJECTS,
+  DRAW_JARS,
   DRAW_TYPES,
   EVENT_TYPES,
   GENDERS,
@@ -82,6 +83,7 @@ function emptyRoom(id: string): Room {
     questions: [],
     wishlist: [],
     notes: [],
+    messages: [],
     draws: [],
     letters: [],
     daily: [],
@@ -167,6 +169,7 @@ function normalizeRoom(room: Room): Room {
   room.questions = room.questions ?? [];
   room.wishlist = room.wishlist ?? [];
   room.notes = room.notes ?? [];
+  room.messages = room.messages ?? [];
   room.draws = room.draws ?? [];
   room.letters = room.letters ?? [];
   room.daily = room.daily ?? [];
@@ -233,6 +236,7 @@ function mergeRooms(left: Room, right: Room): Room {
   room.questions = mergeQuestions(other.questions, room.questions);
   room.wishlist = mergeWishes(other.wishlist, room.wishlist);
   room.notes = mergeById(other.notes ?? [], room.notes ?? []);
+  room.messages = mergeById(other.messages ?? [], room.messages ?? []);
   room.draws = mergeById(other.draws ?? [], room.draws ?? []);
   room.letters = mergeLetters(other.letters, room.letters);
   room.events = mergeById(other.events ?? [], room.events ?? []);
@@ -277,7 +281,7 @@ function bumpMood(room: Room, amount: number) {
 }
 
 function remember(room: Room, memory: Omit<Memory, "id" | "createdAt">) {
-  const once = new Set(["first-question", "first-answer", "first-draw", "first-note", "first-letter", "cat-100"]);
+  const once = new Set(["first-question", "first-answer", "first-draw", "first-note", "first-letter", "first-chat", "cat-100"]);
   if (once.has(memory.kind) && room.memories.some((item) => item.kind === memory.kind)) return;
   if (memory.kind === "joined" && room.memories.some((item) => item.kind === "joined" && item.actor === memory.actor)) {
     return;
@@ -455,9 +459,9 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         break;
       }
       case "draw": {
+        touchMember(room, name);
         if (action.drawType === "tonight") {
           const idea = TONIGHT_IDEAS[Math.floor(Math.random() * TONIGHT_IDEAS.length)];
-          touchMember(room, name);
           room.draws.unshift({
             id: uid(),
             type: "tonight",
@@ -466,32 +470,27 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
             winner: idea.zh,
             createdAt: now,
           });
-          room.draws = room.draws.slice(0, 40);
-          bumpMood(room, 3);
-          remember(room, {
-            kind: "first-draw",
-            titleZh: "第一次抽签",
-            titleEn: "First draw",
-            actor: name,
+        } else {
+          const spec = DRAW_TYPES.find((item) => item.id === action.drawType);
+          if (!spec) throw new Error("Unknown draw type");
+          let winner: string;
+          if (spec.kind === "person") {
+            const names = [...new Set(room.members.map((m) => m.displayName))];
+            if (names.length < 2) throw new Error("Need two people in the room first");
+            winner = names[Math.floor(Math.random() * names.length)];
+          } else {
+            const pool = DRAW_JARS[spec.jar];
+            winner = pool[Math.floor(Math.random() * pool.length)].zh;
+          }
+          room.draws.unshift({
+            id: uid(),
+            type: spec.id,
+            labelZh: spec.zh,
+            labelEn: spec.en,
+            winner,
+            createdAt: now,
           });
-          break;
         }
-        const spec = DRAW_TYPES.find((item) => item.id === action.drawType);
-        if (!spec) throw new Error("Unknown draw type");
-        touchMember(room, name);
-        const names = [...new Set(room.members.map((m) => m.displayName))];
-        if (names.length < 2) {
-          throw new Error("Need two people in the room first");
-        }
-        const winner = names[Math.floor(Math.random() * names.length)];
-        room.draws.unshift({
-          id: uid(),
-          type: spec.id,
-          labelZh: spec.zh,
-          labelEn: spec.en,
-          winner,
-          createdAt: now,
-        });
         room.draws = room.draws.slice(0, 40);
         bumpMood(room, 3);
         remember(room, {
@@ -519,6 +518,25 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           kind: "first-note",
           titleZh: "第一张便签",
           titleEn: "First sticky note",
+          actor: name,
+        });
+        break;
+      }
+      case "sendChat": {
+        const text = action.text.trim().slice(0, 200);
+        if (!text) throw new Error("Message required");
+        touchMember(room, name);
+        room.messages.unshift({
+          id: uid(),
+          author: name,
+          text,
+          createdAt: now,
+        });
+        room.messages = room.messages.slice(0, 80);
+        remember(room, {
+          kind: "first-chat",
+          titleZh: "第一次聊天",
+          titleEn: "First chat",
           actor: name,
         });
         break;

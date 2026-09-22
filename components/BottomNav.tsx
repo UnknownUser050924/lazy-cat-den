@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const ITEMS = [
   { href: "", zh: "小屋", en: "Home", icon: "⌂" },
+  { href: "/chat", zh: "聊天", en: "Chat", icon: "✎" },
   { href: "/qa", zh: "问答", en: "Q&A", icon: "♡" },
   { href: "/draw", zh: "抽签", en: "Draw", icon: "✦" },
   { href: "/wishlist", zh: "愿望", en: "Wish", icon: "☆" },
@@ -17,7 +18,7 @@ export function BottomNav({ room }: { room: string }) {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--card)_92%,transparent)] px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md">
-      <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
+      <div className="mx-auto grid max-w-lg grid-cols-6 gap-1">
         {ITEMS.map((item) => {
           const href = `${base}${item.href}`;
           const active = item.href === "" ? pathname === base : pathname.startsWith(href);

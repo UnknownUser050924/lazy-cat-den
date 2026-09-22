@@ -39,6 +39,7 @@ export default function CottagePage() {
   }
 
   const objects = [
+    { href: "chat", zh: "聊天", en: "Chat" },
     { href: "letter", zh: "信", en: "Letter" },
     { href: "qa", zh: "问答", en: "Q&A" },
     { href: "draw", zh: "抽签", en: "Draw" },

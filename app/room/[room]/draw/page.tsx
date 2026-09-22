@@ -14,9 +14,12 @@ export default function DrawPage() {
   const members = [...new Set(room.members.map((m) => m.displayName))];
 
   async function draw(drawType: string) {
-    if (drawType !== "tonight" && members.length < 2) {
-      setError("再等一个人进小屋吧 Need two people first");
-      return;
+    if (drawType !== "tonight") {
+      const spec = DRAW_TYPES.find((item) => item.id === drawType);
+      if (spec?.kind === "person" && members.length < 2) {
+        setError("再等一个人进小屋吧 Need two people first");
+        return;
+      }
     }
     setError(null);
     setSpinning(drawType);
@@ -35,7 +38,7 @@ export default function DrawPage() {
       </header>
       {members.length < 2 ? (
         <p className="card rounded-2xl p-4 text-sm text-muted">
-          现在小屋里还不够两个人。把邀请链接发给对方吧。
+          选谁来做，要等两个人都在。今晚吃什么、看什么，现在就能抽。
           {members.length ? ` 现在看到：${members.join("、")}` : ""}
         </p>
       ) : null}
@@ -48,23 +51,46 @@ export default function DrawPage() {
         <div className="text-xs text-muted">What should we do tonight</div>
         {spinning === "tonight" ? <p className="mt-2 text-xs text-rose">抽签中…</p> : null}
       </button>
-      <div className="grid grid-cols-2 gap-3">
-        {DRAW_TYPES.map((item) => (
-          <button
-            key={item.id}
-            disabled={busy || spinning !== null}
-            onClick={() => draw(item.id)}
-            className="card soft-btn rounded-[24px] p-4 text-left disabled:opacity-60"
-          >
-            <div className="text-2xl">{item.emoji}</div>
-            <div className="mt-2 font-bold">{item.zh}</div>
-            <div className="text-xs text-muted">{item.en}</div>
-            {spinning === item.id ? (
-              <p className="mt-2 text-xs text-rose">抽签中… shuffling…</p>
-            ) : null}
-          </button>
-        ))}
-      </div>
+      <section>
+        <h2 className="mb-3 font-bold">谁来做 Who does it</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {DRAW_TYPES.filter((item) => item.kind === "person").map((item) => (
+            <button
+              key={item.id}
+              disabled={busy || spinning !== null}
+              onClick={() => draw(item.id)}
+              className="card soft-btn rounded-[24px] p-4 text-left disabled:opacity-60"
+            >
+              <div className="text-2xl">{item.emoji}</div>
+              <div className="mt-2 font-bold">{item.zh}</div>
+              <div className="text-xs text-muted">{item.en}</div>
+              {spinning === item.id ? (
+                <p className="mt-2 text-xs text-rose">抽签中… shuffling…</p>
+              ) : null}
+            </button>
+          ))}
+        </div>
+      </section>
+      <section>
+        <h2 className="mb-3 font-bold">选一个 Pick one</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {DRAW_TYPES.filter((item) => item.kind === "jar").map((item) => (
+            <button
+              key={item.id}
+              disabled={busy || spinning !== null}
+              onClick={() => draw(item.id)}
+              className="card soft-btn rounded-[24px] p-4 text-left disabled:opacity-60"
+            >
+              <div className="text-2xl">{item.emoji}</div>
+              <div className="mt-2 font-bold">{item.zh}</div>
+              <div className="text-xs text-muted">{item.en}</div>
+              {spinning === item.id ? (
+                <p className="mt-2 text-xs text-rose">抽签中… shuffling…</p>
+              ) : null}
+            </button>
+          ))}
+        </div>
+      </section>
       {flash ? (
         <div className="pop-in card rounded-[24px] p-5 text-center">
           <p className="text-sm text-muted">这次是</p>

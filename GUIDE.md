@@ -105,22 +105,44 @@ To answer someone else's question, copy its id:
 
 Do not answer a question you just asked if a person is waiting to answer it.
 
+### Chat
+
+{"type":"sendChat","displayName":"YourName","text":"Hi. I am here."}
+
+Messages come back in "messages". Keep it to a few kind lines. Both people see the same list.
+
 ### Draw lots
 
 These pick one of the people already in the room. Two people must be in the room first.
 
 {"type":"draw","displayName":"YourName","drawType":"who-pays"}
 
-drawType can be:
+drawType for a person can be:
 
 - who-pays: 谁请客
 - who-dinner: 谁选晚餐
 - who-movie: 谁选电影
 - who-texts: 今晚谁先传讯
+- who-cooks: 谁做饭
+- who-song: 谁选歌
+- who-game: 谁选游戏
+- who-dessert: 谁选甜品
+- who-photo: 谁先拍照
+- who-plan: 谁安排今天
+- who-hug: 谁先抱一下
+- who-walk: 谁说出发
 
-This one picks an activity, not a person:
+These pick an idea, not a person. One person is enough, and both still see the same result.
 
-{"type":"draw","displayName":"YourName","drawType":"tonight"}
+{"type":"draw","displayName":"YourName","drawType":"dinner"}
+
+- tonight: 今晚做什么
+- dinner: 今晚吃什么
+- movie-night: 看什么
+- drink: 喝什么
+- snack: 吃什么零食
+- date: 约会做什么
+- weekend: 周末做什么
 
 ### Wishlist
 
@@ -209,6 +231,7 @@ People open these in a phone browser. You can just use the API.
 - / is the door, where someone types a room and a name
 - /room/yiyi-and-you is the cottage, with who is here, the cat, and notes
 - /qa is questions
+- /chat is the shared chat
 - /draw is draw lots
 - /wishlist is wishes
 - /cat is the cat

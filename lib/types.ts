@@ -46,6 +46,13 @@ export type Note = {
   createdAt: number;
 };
 
+export type ChatMessage = {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: number;
+};
+
 export type DrawResult = {
   id: string;
   type: string;
@@ -116,6 +123,7 @@ export type Room = {
   questions: Question[];
   wishlist: Wish[];
   notes: Note[];
+  messages: ChatMessage[];
   draws: DrawResult[];
   letters: Letter[];
   daily: DailyPrompt[];
@@ -136,6 +144,7 @@ export type RoomAction =
   | { type: "removeWish"; displayName: string; wishId: string }
   | { type: "draw"; displayName: string; drawType: string }
   | { type: "addNote"; displayName: string; text: string }
+  | { type: "sendChat"; displayName: string; text: string }
   | { type: "removeNote"; displayName: string; noteId: string }
   | { type: "setStatus"; displayName: string; statusId: string }
   | { type: "sendLetter"; displayName: string; text: string }
