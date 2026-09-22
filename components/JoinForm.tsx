@@ -25,16 +25,21 @@ export function JoinForm({
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const roomFromUrl = params.get("room")?.trim() ?? "";
+    const existing = readSession();
     if (roomFromUrl) {
-      setRoom(roomFromUrl);
+      const id = slugifyRoom(roomFromUrl);
+      setRoom(id);
       setFromInvite(true);
+      if (existing?.room === id && existing.displayName) {
+        router.replace(`/room/${encodeURIComponent(id)}`);
+        return;
+      }
       setName("");
       return;
     }
-    const existing = readSession();
     if (existing?.room) setRoom(existing.room);
     if (existing?.displayName) setName(existing.displayName);
-  }, []);
+  }, [router]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();

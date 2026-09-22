@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
-import { readSession } from "@/lib/session";
+import { slugifyRoom } from "@/lib/constants";
+import { readSession, writeSession } from "@/lib/session";
 import { useRoom } from "@/lib/use-room";
 import { isNight } from "@/lib/cottage";
 import type { ClientAction, Room } from "@/lib/types";
@@ -48,10 +49,12 @@ export function RoomShell({
 
   useEffect(() => {
     const session = readSession();
-    if (!session || session.room !== roomId) {
-      router.replace(`/?room=${encodeURIComponent(roomId)}`);
+    const id = slugifyRoom(roomId);
+    if (!session || slugifyRoom(session.room) !== id) {
+      router.replace(`/?room=${encodeURIComponent(id || roomId)}`);
       return;
     }
+    writeSession({ room: id, displayName: session.displayName });
     setName(session.displayName);
   }, [roomId, router]);
 

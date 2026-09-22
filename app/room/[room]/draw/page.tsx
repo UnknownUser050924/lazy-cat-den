@@ -36,6 +36,7 @@ export default function DrawPage() {
       {members.length < 2 ? (
         <p className="card rounded-2xl p-4 text-sm text-muted">
           现在小屋里还不够两个人。把邀请链接发给对方吧。
+          {members.length ? ` 现在看到：${members.join("、")}` : ""}
         </p>
       ) : null}
       <button

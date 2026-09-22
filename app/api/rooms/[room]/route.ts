@@ -1,19 +1,24 @@
 import { NextResponse } from "next/server";
 import { slugifyRoom } from "@/lib/constants";
-import { applyAction, getRoom } from "@/lib/store";
+import { sessionFromRequest } from "@/lib/session";
+import { applyAction, getRoom, notePresence } from "@/lib/store";
 import type { RoomAction } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ room: string }> };
 
-export async function GET(_req: Request, ctx: Ctx) {
+export async function GET(req: Request, ctx: Ctx) {
   const { room } = await ctx.params;
   const id = slugifyRoom(decodeURIComponent(room));
   if (!id) {
     return NextResponse.json({ error: "Invalid room" }, { status: 400 });
   }
-  const data = await getRoom(id);
+  const session = sessionFromRequest(req);
+  const data =
+    session && session.room === id
+      ? await notePresence(id, session.displayName).catch(() => getRoom(id))
+      : await getRoom(id);
   return NextResponse.json(data);
 }
 

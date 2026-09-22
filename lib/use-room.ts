@@ -1,21 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ClientAction, Room } from "./types";
 
 export function useRoom(roomId: string, displayName: string | null) {
   const [room, setRoom] = useState<Room | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const revision = useRef(0);
 
   const refresh = useCallback(async () => {
+    const seen = revision.current;
     const res = await fetch(`/api/rooms/${encodeURIComponent(roomId)}`, {
       cache: "no-store",
     });
     if (!res.ok) throw new Error("Could not load room");
     const data = (await res.json()) as Room;
-    setRoom(data);
-    setError(null);
+    if (revision.current === seen) {
+      setRoom(data);
+      setError(null);
+    }
     return data;
   }, [roomId]);
 
@@ -31,6 +35,7 @@ export function useRoom(roomId: string, displayName: string | null) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Something went wrong");
+        revision.current += 1;
         setRoom(data as Room);
         setError(null);
         return data as Room;

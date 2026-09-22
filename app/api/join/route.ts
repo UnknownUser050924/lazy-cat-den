@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { slugifyRoom } from "@/lib/constants";
+import { sessionCookie } from "@/lib/session";
 import { applyAction } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -18,5 +19,7 @@ export async function POST(req: Request) {
   await applyAction(id, { type: "join", displayName });
   back.searchParams.set("room", id);
   back.searchParams.set("joined", displayName);
-  return NextResponse.redirect(back, 303);
+  const response = NextResponse.redirect(back, 303);
+  response.headers.append("Set-Cookie", sessionCookie({ room: id, displayName }));
+  return response;
 }

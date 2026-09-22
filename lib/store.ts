@@ -57,6 +57,18 @@ function daysBetween(from: number, to: number) {
   return Math.round((b.getTime() - a.getTime()) / 86_400_000);
 }
 
+function isRealName(name: string) {
+  const clean = name.trim();
+  if (!clean || clean.length > 24) return false;
+  return !["unknown", "undefined", "null"].includes(clean.toLowerCase());
+}
+
+function cleanName(name: string) {
+  const clean = name.trim().slice(0, 24);
+  if (!isRealName(clean)) throw new Error("Write your own name");
+  return clean;
+}
+
 function uid() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -149,7 +161,9 @@ function normalizeMember(member: Partial<Member> & { displayName: string }): Mem
 }
 
 function normalizeRoom(room: Room): Room {
-  room.members = (room.members ?? []).map((member) => normalizeMember(member));
+  room.members = (room.members ?? [])
+    .filter((member) => member && isRealName(member.displayName ?? ""))
+    .map((member) => normalizeMember(member));
   room.questions = room.questions ?? [];
   room.wishlist = room.wishlist ?? [];
   room.notes = room.notes ?? [];
@@ -162,22 +176,73 @@ function normalizeRoom(room: Room): Room {
   return room;
 }
 
+function mergeQuestions(a: Room["questions"], b: Room["questions"]) {
+  const map = new Map<string, Room["questions"][number]>();
+  for (const item of [...(a ?? []), ...(b ?? [])]) {
+    const prev = map.get(item.id);
+    if (!prev) map.set(item.id, item);
+    else if (prev.answer && !item.answer) map.set(item.id, prev);
+    else map.set(item.id, item.answer ? item : prev);
+  }
+  return [...map.values()].sort((x, y) => y.createdAt - x.createdAt);
+}
+
+function mergeLetters(a: Room["letters"], b: Room["letters"]) {
+  const map = new Map<string, Room["letters"][number]>();
+  for (const item of [...(a ?? []), ...(b ?? [])]) {
+    const prev = map.get(item.id);
+    if (!prev) map.set(item.id, item);
+    else if (prev.openedAt && !item.openedAt) map.set(item.id, prev);
+    else map.set(item.id, item.openedAt ? item : prev);
+  }
+  return [...map.values()].sort((x, y) => y.createdAt - x.createdAt);
+}
+
+function mergeWishes(a: Room["wishlist"], b: Room["wishlist"]) {
+  const map = new Map<string, Room["wishlist"][number]>();
+  for (const item of [...(a ?? []), ...(b ?? [])]) {
+    const prev = map.get(item.id);
+    if (!prev) map.set(item.id, item);
+    else map.set(item.id, { ...item, done: prev.done || item.done });
+  }
+  return [...map.values()].sort((x, y) => y.createdAt - x.createdAt);
+}
+
 function mergeDaily(a: Room["daily"], b: Room["daily"]): Room["daily"] {
   const map = new Map<string, Room["daily"][number]>();
-  for (const day of [...a, ...b]) {
+  for (const day of [...(a ?? []), ...(b ?? [])]) {
     const prev = map.get(day.date);
     if (!prev) {
-      map.set(day.date, { ...day, answers: [...day.answers] });
+      map.set(day.date, { ...day, answers: [...(day.answers ?? [])] });
       continue;
     }
     const answers = new Map(prev.answers.map((item) => [item.name, item]));
-    for (const answer of day.answers) {
+    for (const answer of day.answers ?? []) {
       const existing = answers.get(answer.name);
       if (!existing || answer.at >= existing.at) answers.set(answer.name, answer);
     }
     map.set(day.date, { date: day.date, promptId: day.promptId || prev.promptId, answers: [...answers.values()] });
   }
   return [...map.values()].sort((x, y) => y.date.localeCompare(x.date));
+}
+
+function mergeRooms(left: Room, right: Room): Room {
+  const room = normalizeRoom(cloneRoom(right));
+  const other = normalizeRoom(cloneRoom(left));
+  room.members = mergeMembers(other.members, room.members);
+  room.questions = mergeQuestions(other.questions, room.questions);
+  room.wishlist = mergeWishes(other.wishlist, room.wishlist);
+  room.notes = mergeById(other.notes ?? [], room.notes ?? []);
+  room.draws = mergeById(other.draws ?? [], room.draws ?? []);
+  room.letters = mergeLetters(other.letters, room.letters);
+  room.events = mergeById(other.events ?? [], room.events ?? []);
+  room.gifts = mergeById(other.gifts ?? [], room.gifts ?? []);
+  room.memories = mergeById(other.memories ?? [], room.memories ?? []);
+  room.daily = mergeDaily(other.daily ?? [], room.daily ?? []);
+  room.cat.lastCheckin = Math.max(room.cat.lastCheckin, other.cat.lastCheckin);
+  room.cat.lastPat = Math.max(room.cat.lastPat, other.cat.lastPat);
+  room.cat.mood = Math.max(room.cat.mood, other.cat.mood);
+  return room;
 }
 
 function mergeById<T extends { id: string; createdAt: number }>(a: T[], b: T[]): T[] {
@@ -265,37 +330,31 @@ async function writeDisk(rooms: Record<string, Room>) {
 
 async function loadRoom(id: string): Promise<Room> {
   const mem = store().rooms;
-  if (mem[id]) return normalizeRoom(cloneRoom(mem[id]));
-
   const disk = await readDisk();
-  const room = normalizeRoom(cloneRoom(disk[id] ?? emptyRoom(id)));
-  mem[id] = cloneRoom(room);
-  return room;
+  const fromDisk = disk[id] ? normalizeRoom(cloneRoom(disk[id])) : null;
+  const fromMem = mem[id] ? normalizeRoom(cloneRoom(mem[id])) : null;
+  const room = fromDisk && fromMem ? mergeRooms(fromDisk, fromMem) : (fromDisk ?? fromMem ?? emptyRoom(id));
+  mem[id] = cloneRoom(normalizeRoom(room));
+  return cloneRoom(mem[id]);
 }
 
 async function saveRoom(room: Room) {
-  const mem = store().rooms;
-  // Pull any members another worker may have written to disk.
   const disk = await readDisk();
   const onDisk = disk[room.id];
-  if (onDisk) {
-    room.members = mergeMembers(onDisk.members, room.members);
-    room.questions = mergeById(onDisk.questions, room.questions);
-    room.wishlist = mergeById(onDisk.wishlist, room.wishlist);
-    room.notes = mergeById(onDisk.notes ?? [], room.notes);
-    room.draws = mergeById(onDisk.draws ?? [], room.draws);
-    room.letters = mergeById(onDisk.letters ?? [], room.letters);
-    room.events = mergeById(onDisk.events ?? [], room.events);
-    room.gifts = mergeById(onDisk.gifts ?? [], room.gifts);
-    room.memories = mergeById(onDisk.memories ?? [], room.memories);
-    room.daily = mergeDaily(onDisk.daily ?? [], room.daily);
-    room.cat.lastCheckin = Math.max(room.cat.lastCheckin, onDisk.cat.lastCheckin);
-    room.cat.lastPat = Math.max(room.cat.lastPat, onDisk.cat.lastPat);
-  }
-
-  mem[room.id] = cloneRoom(room);
-  disk[room.id] = cloneRoom(room);
+  const merged = onDisk ? mergeRooms(normalizeRoom(cloneRoom(onDisk)), room) : room;
+  store().rooms[merged.id] = cloneRoom(merged);
+  disk[merged.id] = cloneRoom(merged);
   await writeDisk(disk);
+}
+
+export async function notePresence(id: string, displayName: string): Promise<Room> {
+  return withLock(async () => {
+    const name = cleanName(displayName);
+    const room = applyDecay(await loadRoom(id));
+    touchMember(room, name);
+    await saveRoom(room);
+    return cloneRoom(room);
+  });
 }
 
 export async function getRoom(id: string): Promise<Room> {
@@ -311,8 +370,7 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
   return withLock(async () => {
     const room = applyDecay(await loadRoom(id));
     const now = Date.now();
-    const name = action.displayName.trim().slice(0, 24);
-    if (!name) throw new Error("Display name required");
+    const name = cleanName(action.displayName ?? "");
 
     switch (action.type) {
       case "join":
@@ -420,12 +478,12 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         }
         const spec = DRAW_TYPES.find((item) => item.id === action.drawType);
         if (!spec) throw new Error("Unknown draw type");
+        touchMember(room, name);
         const names = [...new Set(room.members.map((m) => m.displayName))];
         if (names.length < 2) {
           throw new Error("Need two people in the room first");
         }
         const winner = names[Math.floor(Math.random() * names.length)];
-        touchMember(room, name);
         room.draws.unshift({
           id: uid(),
           type: spec.id,

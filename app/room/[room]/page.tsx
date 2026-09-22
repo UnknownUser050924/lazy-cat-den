@@ -21,29 +21,8 @@ export default function CottagePage() {
   const speech = catSpeech(room, night);
   const streak = togetherStreak(room.members);
   const me = room.members.find((member) => member.displayName === displayName);
-  const people = [...room.members];
-  if (!people.some((member) => member.displayName === displayName)) {
-    people.unshift({
-      displayName,
-      lastSeen: Date.now(),
-      statusId: null,
-      visitDays: [],
-      profile: {
-        gender: "",
-        signature: "",
-        vibes: [],
-        formId: "sleepy",
-        thinking: "",
-        need: "",
-        want: "",
-        pocket: {},
-        wall: "cozy",
-        objects: [],
-        knowMe: [],
-        guesses: [],
-      },
-    });
-  }
+  const people = room.members;
+  const today = new Date().toISOString().slice(0, 10);
 
   async function copyInvite() {
     const url = `${window.location.origin}/?room=${encodeURIComponent(roomId)}`;
@@ -83,10 +62,15 @@ export default function CottagePage() {
           {people.map((member) => {
             const status = COUPLE_STATUSES.find((item) => item.id === member.statusId);
             const here = member.displayName === displayName || isHere(member);
+            const label = here
+              ? "在线"
+              : member.visitDays.includes(today)
+                ? "刚刚还在"
+                : "离开中";
             return (
               <div key={member.displayName}>
                 <p className="font-extrabold">{member.displayName}</p>
-                <p className="text-xs text-muted">{here ? "在小屋中" : "离开中"}</p>
+                <p className="text-xs text-muted">{label}</p>
                 <p className="mt-1 text-sm text-rose-deep">{status ? status.zh : "还没说状态"}</p>
               </div>
             );
