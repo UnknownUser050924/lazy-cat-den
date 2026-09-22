@@ -43,6 +43,12 @@ export const VIBES = [
   { id: "sleep", zh: "爱睡觉", en: "Sleepyhead" },
 ] as const;
 
+export const GENDERS = [
+  { id: "girl", zh: "女生", en: "Girl" },
+  { id: "boy", zh: "男生", en: "Boy" },
+  { id: "other", zh: "其他", en: "Other" },
+] as const;
+
 export const CAT_FORMS = [
   { id: "sleepy", zh: "困困猫", en: "Sleepy Cat", line: "想躺下" },
   { id: "hungry", zh: "饿饿猫", en: "Hungry Cat", line: "想吃东西" },

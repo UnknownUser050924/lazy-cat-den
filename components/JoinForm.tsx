@@ -1,26 +1,30 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { CatMascot } from "@/components/CatMascot";
 import { DEFAULT_NAMES, DEFAULT_ROOM, slugifyRoom } from "@/lib/constants";
 import { readSession, writeSession } from "@/lib/session";
 
-export function JoinForm() {
+export function JoinForm({
+  initialRoom = "",
+  joined = "",
+}: {
+  initialRoom?: string;
+  joined?: string;
+}) {
   const router = useRouter();
-  const params = useSearchParams();
-  const invitedRoom = params.get("room") || DEFAULT_ROOM;
-  const [room, setRoom] = useState(invitedRoom);
+  const [room, setRoom] = useState(initialRoom || DEFAULT_ROOM);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (initialRoom) return;
     const existing = readSession();
-    if (params.get("room")) return;
     if (existing?.room) setRoom(existing.room);
     if (existing?.displayName) setName(existing.displayName);
-  }, [params]);
+  }, [initialRoom]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -62,10 +66,14 @@ export function JoinForm() {
       <div className="mt-2">
         <CatMascot mood={86} size={210} />
       </div>
-      <form onSubmit={onSubmit} className="card mt-2 space-y-4 rounded-[28px] p-5">
+      {joined ? (
+        <p className="mt-4 text-center text-sm font-bold text-rose-deep">{joined} 已经在小屋里</p>
+      ) : null}
+      <form action="/api/join" method="post" onSubmit={onSubmit} className="card mt-2 space-y-4 rounded-[28px] p-5">
         <label className="block">
           <span className="text-xs font-bold text-muted">房间名 Room</span>
           <input
+            name="room"
             value={room}
             onChange={(e) => setRoom(e.target.value)}
             placeholder={DEFAULT_ROOM}
@@ -82,6 +90,7 @@ export function JoinForm() {
         <label className="block">
           <span className="text-xs font-bold text-muted">你的名字 Your name</span>
           <input
+            name="displayName"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="嘉怡 或 宝宝"

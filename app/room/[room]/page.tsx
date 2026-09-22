@@ -29,6 +29,7 @@ export default function CottagePage() {
       statusId: null,
       visitDays: [],
       profile: {
+        gender: "",
         signature: "",
         vibes: [],
         formId: "sleepy",

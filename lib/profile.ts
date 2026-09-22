@@ -2,6 +2,7 @@ import type { Profile } from "./types";
 
 export function emptyProfile(): Profile {
   return {
+    gender: "",
     signature: "",
     vibes: [],
     formId: "sleepy",

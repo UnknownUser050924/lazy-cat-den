@@ -7,6 +7,7 @@ import {
   CORNER_OBJECTS,
   GIFT_KINDS,
   KNOW_PROMPTS,
+  GENDERS,
   POCKET_KEYS,
   VIBES,
   WALLS,
@@ -40,6 +41,9 @@ export default function CornerPage() {
       <header className="text-center">
         <p className="text-xs tracking-[0.2em] text-rose">MY LITTLE CORNER</p>
         <h1 className="text-3xl font-extrabold">{member.displayName}</h1>
+        <p className="text-sm text-rose-deep">
+          {GENDERS.find((item) => item.id === member.profile.gender)?.zh ?? "还没选性别"}
+        </p>
         <p className="text-sm text-muted">
           {form.zh} · {form.line}
         </p>
@@ -113,6 +117,23 @@ export default function CornerPage() {
             ))}
           </div>
           <Thoughts member={member} onSave={(thinking, need, want) => act({ type: "setThoughts", thinking, need, want })} />
+          <div>
+            <p className="text-sm">性别 Gender</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {GENDERS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => act({ type: "setGender", gender: item.id })}
+                  className={`rounded-full px-3 py-1 text-xs font-bold ${
+                    member.profile.gender === item.id ? "bg-rose text-white" : "bg-blush text-rose-deep"
+                  }`}
+                >
+                  {item.zh}
+                </button>
+              ))}
+            </div>
+          </div>
           <label className="block text-sm">
             签名
             <input

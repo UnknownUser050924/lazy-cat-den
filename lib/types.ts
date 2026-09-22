@@ -1,4 +1,5 @@
 export type Profile = {
+  gender: string;
   signature: string;
   vibes: string[];
   formId: string;
@@ -145,6 +146,7 @@ export type RoomAction =
   | { type: "setVibes"; displayName: string; vibes: string[] }
   | { type: "setForm"; displayName: string; formId: string }
   | { type: "setThoughts"; displayName: string; thinking: string; need: string; want: string }
+  | { type: "setGender"; displayName: string; gender: string }
   | { type: "setSignature"; displayName: string; signature: string }
   | { type: "setPocket"; displayName: string; key: string; value: string }
   | { type: "setCorner"; displayName: string; wall: string; objects: string[] }

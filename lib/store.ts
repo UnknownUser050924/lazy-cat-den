@@ -6,6 +6,7 @@ import {
   CORNER_OBJECTS,
   DRAW_TYPES,
   EVENT_TYPES,
+  GENDERS,
   GIFT_KINDS,
   KNOW_PROMPTS,
   NOTE_COLORS,
@@ -96,6 +97,7 @@ function mergeProfile(a: Profile, b: Profile, aNewer: boolean): Profile {
     guesses.set(`${guess.target}:${guess.promptId}`, guess);
   }
   return {
+    gender: primary.gender || other.gender,
     signature: primary.signature || other.signature,
     vibes: primary.vibes.length ? primary.vibes : other.vibes,
     formId: primary.formId || other.formId,
@@ -566,6 +568,13 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         profile.thinking = action.thinking.trim().slice(0, 80);
         profile.need = action.need.trim().slice(0, 80);
         profile.want = action.want.trim().slice(0, 80);
+        break;
+      }
+      case "setGender": {
+        if (action.gender !== "" && !GENDERS.some((item) => item.id === action.gender)) {
+          throw new Error("Unknown gender");
+        }
+        memberOf(room, name).profile.gender = action.gender;
         break;
       }
       case "setSignature": {
