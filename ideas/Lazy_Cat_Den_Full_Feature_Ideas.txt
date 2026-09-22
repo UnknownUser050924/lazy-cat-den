@@ -1,0 +1,673 @@
+懒猫小屋 / Lazy Cat Den
+FULL FEATURE EXPANSION IDEAS
+包含：先前的 9 个小屋升级想法 + “我的角落 / My Little Corner” 特殊个人档案系统
+
+==================================================
+PART A — 9 个小屋升级想法
+==================================================
+
+1. 💕 COUPLE STATUS — “两个人现在是什么状态”
+--------------------------------------------------
+在小屋首页顶部增加一个轻量的 Couple Status。
+
+目前项目已经有“谁在小屋 / Who is here”的成员状态，因此可以在现有 presence 基础上扩展。 
+
+每个人可以设置一个小状态，例如：
+- 🌸 想你了
+- 💤 好困
+- 🍜 想吃东西
+- 🥰 心情很好
+- 😭 今天好累
+- 💭 在想你
+- ✨ 想玩一下
+- 🫶 陪我一下
+
+示例：
+
+┌─────────────────────────────────┐
+│ 🐱 小屋今天也有人来啦             │
+│                                 │
+│   嘉怡                    宝宝    │
+│    ●                         ●   │
+│  在小屋中                  离开中 │
+│                                 │
+│      ♥ Together today: 3 days   │
+└─────────────────────────────────┘
+
+目的：
+让 Presence 不只是“在线/离线”，而是变成一种很轻的情侣互动。
+
+
+2. 💌 SECRET MESSAGE — “给你的信”
+--------------------------------------------------
+在小屋里增加一个信封入口。
+
+发送者可以留下只有另一半可以看到的小纸条：
+
+💌 给你的信
+“嘉怡留了一张纸条”
+
+[ Open ]
+
+打开后：
+“今天也要好好吃饭哦 ♡”
+
+并显示：
+Opened by 宝宝 · 13:42
+
+这个功能不是普通聊天系统。
+
+建议：
+- 一次一张或少量小纸条
+- 可以显示已读
+- 可以有轻微开信动画
+- 信封可以出现在小屋视觉空间里
+- 可作为个人资料中的 Partner Interaction 延伸
+
+目标：
+增加“我专门来这里给你留东西”的感觉。
+
+
+3. 📅 OUR LITTLE CALENDAR — “我们的小日历”
+--------------------------------------------------
+不要做复杂企业日历。
+
+做一个属于两个人的小型时间线/日历。
+
+例如：
+
+        September 2026
+
+   M   T   W   T   F   S   S
+   ·   ·   ♥   ·   ·   ·   ·
+   ·   ·   ·   ★   ·   ·   ·
+
+♥ 21 Sep — First day using the Den
+★ 25 Sep — Movie night
+
+事件类型可以是：
+- 🍜 Dinner
+- 🎬 Movie
+- 🎮 Game
+- 📞 Call
+- 🎂 Birthday
+- 💕 Date
+- ✨ Custom
+
+重点：
+让网站慢慢留下“我们做过什么”的记录。
+
+
+4. 🐱 MAKE THE CAT FEEL ALIVE — “让猫真的住在这里”
+--------------------------------------------------
+现有猫已经有 mood、check-in、pat 和 mood decay。
+
+可以进一步让猫对情侣状态做出反应。
+
+Happy：
+🐱 “嘉怡来过啦！”
+
+Waiting：
+🐱💭 “宝宝今天怎么还没来……”
+
+Two people online：
+🐱💕 “你们两个都在！”
+
+Nobody visited：
+🐱💤 “小屋好安静……”
+
+特殊情况：
+🐱 “发现了一张纸条！”
+
+猫不是独立小游戏。
+
+猫应该成为：
+“这个小屋的住民 / mascot / little companion”。
+
+
+5. 🎲 DRAW LOTS 2.0 — “今晚做什么？”
+--------------------------------------------------
+现有抽签：
+- 谁请客
+- 谁选晚餐
+- 谁选电影
+- 谁先传讯
+
+增加一个更生活化的模式：
+
+🎯 今晚做什么？
+
+可能结果：
+- 🍿 Watch a movie
+- 🎮 Play Roblox together
+- 🍜 Find something to eat
+- 🎵 Listen to music
+- 📞 Call each other
+- 📸 Exchange a photo
+- 💬 Ask each other 3 questions
+- 💤 Do absolutely nothing
+
+建议 UI：
+不要只是一个普通随机按钮。
+
+可以做成：
+“打开小罐子 / 抽一张小卡片 / 转动小签筒”
+
+让抽签有仪式感。
+
+
+6. 🧠 QUESTION OF THE DAY — “今日问题”
+--------------------------------------------------
+把现有 Q&A 再进一步。
+
+系统每天提供一个问题，例如：
+
+💭 如果我们现在可以瞬间去任何地方，
+你想带我去哪里？
+
+或者分类：
+
+💕 Relationship
+- What was your first impression of me?
+- What little thing I do makes you happy?
+
+😂 Funny
+- If I became a cat, what would you name me?
+
+🌙 Deep
+- What's something you want us to experience together?
+
+🍜 Random
+- We have RM50. What are we buying?
+
+两人分别回答后显示：
+
+嘉怡
+“日本京都”
+
+宝宝
+“北海道”
+
+♡ Both answered
+
+这样 Q&A 会更容易形成日常习惯。
+
+
+7. 🌙 NIGHT MODE / TIME ATMOSPHERE — “小屋会随着时间变化”
+--------------------------------------------------
+不要只做普通的 Dark Mode。
+
+根据时间改变小屋的氛围。
+
+白天：
+☀️ cream / warm pink
+🌸 soft background
+
+夜晚：
+🌙 darker cream / muted pink
+✨ tiny stars
+🐱 sleeping cat
+
+晚上可以出现：
+“Good night, 嘉怡 ♡”
+
+重点：
+让网页感觉像“真的住在这里”。
+
+
+8. 📖 OUR MEMORIES — “我们的小故事”
+--------------------------------------------------
+增加一个不是普通 History 的区域。
+
+例如：
+
+╭────────────────────────────╮
+│       📖 我们的小故事       │
+│                            │
+│  ♥ First question          │
+│  Sep 18                    │
+│                            │
+│  🎲 First draw             │
+│  Sep 19                    │
+│                            │
+│  🐱 Cat reached 100 mood   │
+│  Sep 20                    │
+│                            │
+│  💌 First secret note      │
+│  Sep 21                    │
+╰────────────────────────────╯
+
+系统可以自动记录小型 milestone。
+
+例如：
+- 第一次进入小屋
+- 第一个问题
+- 第一个回答
+- 第一次抽签
+- 第一次留下纸条
+- 猫第一次达到 100 mood
+
+目标：
+网站会慢慢变成两个人共同的“数字回忆本”。
+
+
+9. 🏠 MAKE THE COTTAGE FEEL LIKE A REAL PLACE
+--------------------------------------------------
+这是最重要的视觉升级之一。
+
+不要：
+card → card → card → card
+
+而是让“小屋”真的有空间感。
+
+例如：
+
+             ☁️        ☁️
+
+        ┌─────────────────┐
+        │     🪟           │
+        │                  │
+        │   🐱             │
+        │                  │
+        │          🛋️      │
+   🪴   │                  │  🌱
+        │                  │
+        └──────────────────┘
+
+       💌      📋      🎲
+
+不是做成完整像素游戏。
+
+而是：
+“beautiful illustrated room UI”
+
+可以把功能变成房间里的东西：
+
+- Cat = 房间里的猫
+- Notes = 墙上的便利贴板
+- Wishlist = 小篮子
+- Q&A = 笔记本
+- Draw Lots = 小罐子 / 抽签筒
+- Secret Messages = 信封
+- Calendar = 墙上的小日历
+
+最终感觉应该是：
+
+“这不是一个工具网站。
+这是我们的小屋。”
+
+
+==================================================
+PART B — 特殊 Profile 系统
+==================================================
+
+核心名字：
+“我的角落 / My Little Corner”
+
+不要叫普通的 “Profile”。
+
+Shared Cottage = our shared space
+My Little Corner = my personal space
+Cat = our little companion
+Memories = our shared history
+
+
+10. 🪄 MY LITTLE CORNER
+--------------------------------------------------
+打开个人资料后，不是普通 profile card。
+
+它应该像进入自己的“小角落”。
+
+页面内容可以包括：
+- 个人头像/角色
+- Display Name
+- Personal Signature
+- Current Form
+- Vibe Identity
+- Temporary thoughts
+- My Pocket
+- Mini personal room
+- Memories
+- Know Me?
+- Partner interactions
+
+
+11. ✦ VIBE IDENTITY — “我的感觉”
+--------------------------------------------------
+代替普通 Bio。
+
+允许用户选择 3–5 个自己的 traits。
+
+例如：
+- 🌙 Night Owl
+- 🐱 Cat Person
+- 🎧 Music Addict
+- 🍜 Food Hunter
+- 💜 Soft-hearted
+- 🌸 Dreamer
+- 🎮 Gamer
+- 💤 Sleepyhead
+
+这些 traits 会显示给另一半。
+
+
+12. 🐱 CURRENT FORM — “我现在是哪种猫”
+--------------------------------------------------
+把 profile 和现有 Lazy Cat 系统直接连接。
+
+可选：
+- 🐱 Sleepy Cat
+- 🍜 Hungry Cat
+- ⚡ Zoomie Cat
+- 🫶 Cuddle Cat
+- 💼 Work Cat
+- 🌙 Dreamy Cat
+
+例如：
+
+🐱 Current Form
+Sleepy Cat 🌙
+“I want to lie down.”
+
+头像 / 小猫 / 小屋可以根据 Form 做轻微变化。
+
+
+13. 💭 WHAT I WANT YOU TO KNOW
+--------------------------------------------------
+不要永久 Bio。
+
+提供 3 个可以随时改变的小卡片：
+
+💭 I’m thinking about...
+🫶 I need...
+✨ I want...
+
+例如：
+Thinking:
+“When are we going to eat?”
+
+Need:
+“A little attention today.”
+
+Want:
+“Watch something together tonight.”
+
+这是“现在的我”，而不是个人资料里的固定信息。
+
+
+14. 🎒 MY POCKET — “我的口袋”
+--------------------------------------------------
+每个人都有一个小小的 virtual pocket。
+
+里面放代表自己的物件：
+
+🍓 Favourite food
+🎧 Favourite music
+🎮 Favourite game
+🐱 Favourite animal
+🌸 Favourite colour
+☕ Favourite drink
+📷 Favourite photo
+💜 Favourite thing
+
+注意：
+不要把它做成游戏 inventory。
+
+它只是：
+“这些小东西代表我。”
+
+
+15. 🪟 PERSONAL ROOM / ROOM PERSONALITY
+--------------------------------------------------
+每个人的 profile 都可以拥有一个迷你个人房间。
+
+墙面：
+- 🌸 Flower wall
+- 🌙 Night sky
+- 🧸 Cozy room
+- 🌿 Garden
+- 🎀 Cute bedroom
+- 🎮 Gaming corner
+
+房间物件：
+- Laptop
+- Books
+- Plushie
+- Coffee
+- Headphones
+- Cat
+- Plants
+- Photos
+- Fairy lights
+- Posters
+
+概念：
+
+Cottage = 我们的家
+Personal Room = 我的小角落
+
+
+16. 🫶 PARTNER INTERACTION
+--------------------------------------------------
+打开另一半的 My Little Corner 时，
+不是只能“查看资料”。
+
+可以留下小动作：
+
+- 🫶 Hug
+- 🐾 Pat
+- 🌸 Leave flower
+- 💌 Send note
+- 🍪 Give cookie
+
+例子：
+
+“宝宝 gave you a cookie 🍪”
+
+可以在对方的 Profile 里短时间显示。
+
+
+17. 🧠 KNOW ME?
+--------------------------------------------------
+一个非常轻的情侣互动。
+
+用户可以设置：
+- Favourite food
+- Favourite colour
+- Dream destination
+- Comfort food
+- Current favourite song
+- What makes me happy
+
+另一半可以猜。
+
+例如：
+
+What would 嘉怡 choose?
+
+🍜 Ramen
+🍕 Pizza
+🍛 Curry
+🍣 Sushi
+
+结果可以显示一个轻量的：
+“你猜中了 ♡”
+
+不要做成严肃排行榜。
+这是偶尔一起玩的情侣小功能。
+
+
+18. 📖 MEMORY TIMELINE — “我的小故事”
+--------------------------------------------------
+Profile 中放一个个人时间线：
+
+✦ 嘉怡的故事 ✦
+
+● Joined the Den
+  Sep 18, 2026
+
+● First Q&A
+  Sep 19
+
+● Cat reached 100
+  Sep 20
+
+● First secret note
+  Sep 21
+
+随着使用，小屋中的行为逐渐成为这个人的小故事。
+
+
+19. ✦ PERSONAL SIGNATURE
+--------------------------------------------------
+每个人有一个自己的签名。
+
+例如：
+૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა ♡
+ฅ^•ﻌ•^ฅ
+
+签名可以出现在：
+- Add note
+- Answer question
+- Add wishlist
+- Leave something
+- Perform small actions
+
+例子：
+
+Added by 嘉怡
+૮₍ ˶ᵔ ᵕ ᔔ˶ ₎ა
+
+
+==================================================
+PART C — 建议的最终 Profile Layout
+==================================================
+
+                     ✦ 嘉怡 ✦
+                  MY LITTLE CORNER
+
+                          🐱
+                    Sleepy Cat 🌙
+
+               “今天想吃东西 🍜”
+
+             ┌────────────┐  ┌────────────┐
+             │ 🌙 Mood 86 │  │ ⚡ Energy 72│
+             └────────────┘  └────────────┘
+
+                     ✦ MY VIBE ✦
+             🌸 Soft-hearted   🎧 Music
+             🐱 Cat lover      🍜 Foodie
+
+                     ✦ CURRENTLY ✦
+             💭 Thinking: ...
+             🎵 Listening: ...
+             🫶 Need: ...
+
+                     ✦ MY POCKET ✦
+                       🍓 🎧 🐱 🌸 ☕
+
+                     ✦ MY CORNER ✦
+                       [mini room]
+
+                  ✦ OUR MEMORIES ✦
+                       12 moments
+
+                     ✦ KNOW ME? ✦
+                       82% understood
+
+                     ✦ SIGNATURE ✦
+                  ૮₍ ˶ᵔ ᵕ ᔔ˶ ₎ა
+
+                            💌
+                    [Leave something]
+
+
+==================================================
+PART D — 整体 UX / Design Principles
+==================================================
+
+1. Profile 不应该像 Facebook / Instagram。
+2. 不应该变成普通 dashboard。
+3. 不应该到处塞卡片。
+4. 不应该过度依赖 emoji 作为主要视觉语言。
+5. 小屋应该像一个真实存在的空间。
+6. Profile 应该像这个空间中的“我的房间”。
+7. 保持 soft pink / cream / warm cute。
+8. 保持 mobile-first。
+9. 保持中英双语。
+10. 保持轻量动画。
+11. 保持情侣私密空间的感觉。
+12. 不要加入 follower、public likes、comments、popularity ranking 等社交网络机制。
+13. 不要变成 AI chatbot。
+14. 不要变成大型游戏。
+15. 不要破坏现有 MVP 架构。
+16. 优先小型、可维护、可逐步添加的功能。
+
+
+==================================================
+PART E — 推荐开发顺序
+==================================================
+
+Phase 1 — 让小屋变“活”
+1. Couple Status
+2. Cat reactions
+3. Day/Night atmosphere
+4. Cottage visual redesign
+
+Phase 2 — 让小屋变“属于两个人”
+5. Secret Messages
+6. Question of the Day
+7. Our Little Calendar
+8. Draw Lots 2.0
+
+Phase 3 — 让用户拥有自己的空间
+9. My Little Corner
+10. Vibe Identity
+11. Current Form
+12. What I Want You To Know
+13. Personal Signature
+
+Phase 4 — 让个人空间变得特别
+14. My Pocket
+15. Personal Room
+16. Partner Interaction
+17. Know Me?
+
+Phase 5 — 让小屋形成长期记忆
+18. Memory Timeline
+19. Our Memories / milestones
+
+
+==================================================
+FINAL VISION
+==================================================
+
+懒猫小屋最终不应该让用户感觉：
+
+“这是一个有几个情侣功能的网站。”
+
+而应该让用户感觉：
+
+“这是我和嘉怡的小屋。”
+
+进入小屋：
+→ 这是我们的空间。
+
+进入 My Little Corner：
+→ 这是我的小角落。
+
+看到猫：
+→ 这是我们的猫猫陪伴。
+
+留下纸条：
+→ 这是我专门留给你的东西。
+
+回答今日问题：
+→ 这是我们今天一起做的小事情。
+
+查看 Memories：
+→ 这些是我们在这里留下的回忆。
+
+核心目标：
+让功能都服务于“一个属于两个人的小世界”，而不是堆砌功能。

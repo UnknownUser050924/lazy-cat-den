@@ -20,14 +20,16 @@ export function CatMascot({
   mood = 72,
   size = 220,
   patted = false,
+  sleeping = false,
   onPat,
 }: {
   mood?: number;
   size?: number;
   patted?: boolean;
+  sleeping?: boolean;
   onPat?: () => void;
 }) {
-  const kind = moodFromScore(mood);
+  const kind = sleeping ? "lazy" : moodFromScore(mood);
   const eyes =
     kind === "happy" ? (
       <>

@@ -1,7 +1,22 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { DRAW_TYPES, NOTE_COLORS } from "./constants";
-import type { Member, Room, RoomAction } from "./types";
+import {
+  CAT_FORMS,
+  COUPLE_STATUSES,
+  CORNER_OBJECTS,
+  DRAW_TYPES,
+  EVENT_TYPES,
+  GIFT_KINDS,
+  KNOW_PROMPTS,
+  NOTE_COLORS,
+  POCKET_KEYS,
+  TONIGHT_IDEAS,
+  VIBES,
+  WALLS,
+} from "./constants";
+import { promptForDate } from "./cottage";
+import { emptyProfile } from "./profile";
+import type { Member, Memory, Profile, Room, RoomAction } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "rooms.json");
@@ -55,6 +70,11 @@ function emptyRoom(id: string): Room {
     wishlist: [],
     notes: [],
     draws: [],
+    letters: [],
+    daily: [],
+    events: [],
+    gifts: [],
+    memories: [],
     cat: {
       mood: 72,
       lastPat: 0,
@@ -68,15 +88,94 @@ function cloneRoom(room: Room): Room {
   return JSON.parse(JSON.stringify(room)) as Room;
 }
 
+function mergeProfile(a: Profile, b: Profile, aNewer: boolean): Profile {
+  const primary = aNewer ? a : b;
+  const other = aNewer ? b : a;
+  const guesses = new Map<string, Profile["guesses"][number]>();
+  for (const guess of [...other.guesses, ...primary.guesses]) {
+    guesses.set(`${guess.target}:${guess.promptId}`, guess);
+  }
+  return {
+    signature: primary.signature || other.signature,
+    vibes: primary.vibes.length ? primary.vibes : other.vibes,
+    formId: primary.formId || other.formId,
+    thinking: primary.thinking || other.thinking,
+    need: primary.need || other.need,
+    want: primary.want || other.want,
+    pocket: { ...other.pocket, ...Object.fromEntries(Object.entries(primary.pocket).filter(([, value]) => value)) },
+    wall: primary.wall || other.wall,
+    objects: primary.objects.length ? primary.objects : other.objects,
+    knowMe: primary.knowMe.length ? primary.knowMe : other.knowMe,
+    guesses: [...guesses.values()],
+  };
+}
+
 function mergeMembers(a: Member[], b: Member[]): Member[] {
   const map = new Map<string, Member>();
-  for (const member of [...a, ...b]) {
+  for (const raw of [...a, ...b]) {
+    const member = normalizeMember(raw);
     const prev = map.get(member.displayName);
-    if (!prev || member.lastSeen >= prev.lastSeen) {
+    if (!prev) {
       map.set(member.displayName, member);
+      continue;
     }
+    const newer = member.lastSeen >= prev.lastSeen ? member : prev;
+    const older = newer === member ? prev : member;
+    map.set(member.displayName, {
+      ...newer,
+      visitDays: [...new Set([...prev.visitDays, ...member.visitDays])],
+      profile: mergeProfile(newer.profile, older.profile, true),
+    });
   }
   return [...map.values()].sort((x, y) => x.displayName.localeCompare(y.displayName, "zh"));
+}
+
+function normalizeMember(member: Partial<Member> & { displayName: string }): Member {
+  const profile = { ...emptyProfile(), ...(member.profile ?? {}) };
+  profile.vibes = profile.vibes ?? [];
+  profile.objects = profile.objects ?? [];
+  profile.knowMe = profile.knowMe ?? [];
+  profile.guesses = profile.guesses ?? [];
+  profile.pocket = profile.pocket ?? {};
+  return {
+    displayName: member.displayName,
+    lastSeen: member.lastSeen ?? 0,
+    statusId: member.statusId ?? null,
+    visitDays: member.visitDays ?? [],
+    profile,
+  };
+}
+
+function normalizeRoom(room: Room): Room {
+  room.members = (room.members ?? []).map((member) => normalizeMember(member));
+  room.questions = room.questions ?? [];
+  room.wishlist = room.wishlist ?? [];
+  room.notes = room.notes ?? [];
+  room.draws = room.draws ?? [];
+  room.letters = room.letters ?? [];
+  room.daily = room.daily ?? [];
+  room.events = room.events ?? [];
+  room.gifts = room.gifts ?? [];
+  room.memories = room.memories ?? [];
+  return room;
+}
+
+function mergeDaily(a: Room["daily"], b: Room["daily"]): Room["daily"] {
+  const map = new Map<string, Room["daily"][number]>();
+  for (const day of [...a, ...b]) {
+    const prev = map.get(day.date);
+    if (!prev) {
+      map.set(day.date, { ...day, answers: [...day.answers] });
+      continue;
+    }
+    const answers = new Map(prev.answers.map((item) => [item.name, item]));
+    for (const answer of day.answers) {
+      const existing = answers.get(answer.name);
+      if (!existing || answer.at >= existing.at) answers.set(answer.name, answer);
+    }
+    map.set(day.date, { date: day.date, promptId: day.promptId || prev.promptId, answers: [...answers.values()] });
+  }
+  return [...map.values()].sort((x, y) => y.date.localeCompare(x.date));
 }
 
 function mergeById<T extends { id: string; createdAt: number }>(a: T[], b: T[]): T[] {
@@ -98,18 +197,52 @@ function applyDecay(room: Room) {
 }
 
 function bumpMood(room: Room, amount: number) {
+  const before = room.cat.mood;
   room.cat.mood = Math.min(100, Math.max(4, room.cat.mood + amount));
+  if (before < 100 && room.cat.mood >= 100) {
+    remember(room, {
+      kind: "cat-100",
+      titleZh: "猫心情满了",
+      titleEn: "Cat reached 100 mood",
+      actor: "",
+    });
+  }
+}
+
+function remember(room: Room, memory: Omit<Memory, "id" | "createdAt">) {
+  const once = new Set(["first-question", "first-answer", "first-draw", "first-note", "first-letter", "cat-100"]);
+  if (once.has(memory.kind) && room.memories.some((item) => item.kind === memory.kind)) return;
+  if (memory.kind === "joined" && room.memories.some((item) => item.kind === "joined" && item.actor === memory.actor)) {
+    return;
+  }
+  room.memories.unshift({ ...memory, id: uid(), createdAt: Date.now() });
+  room.memories = room.memories.slice(0, 40);
 }
 
 function touchMember(room: Room, displayName: string) {
   const now = Date.now();
+  const day = todayKey(now);
   const existing = room.members.find((m) => m.displayName === displayName);
   if (existing) {
     existing.lastSeen = now;
+    if (!existing.visitDays.includes(day)) existing.visitDays.push(day);
   } else {
-    room.members.push({ displayName, lastSeen: now });
+    room.members.push(normalizeMember({ displayName, lastSeen: now, visitDays: [day] }));
+    remember(room, {
+      kind: "joined",
+      titleZh: `${displayName}走进小屋`,
+      titleEn: `${displayName} joined the den`,
+      actor: displayName,
+    });
   }
   room.members = mergeMembers(room.members, []);
+}
+
+function memberOf(room: Room, displayName: string) {
+  touchMember(room, displayName);
+  const member = room.members.find((item) => item.displayName === displayName);
+  if (!member) throw new Error("Member missing");
+  return member;
 }
 
 async function readDisk(): Promise<Record<string, Room>> {
@@ -130,10 +263,10 @@ async function writeDisk(rooms: Record<string, Room>) {
 
 async function loadRoom(id: string): Promise<Room> {
   const mem = store().rooms;
-  if (mem[id]) return cloneRoom(mem[id]);
+  if (mem[id]) return normalizeRoom(cloneRoom(mem[id]));
 
   const disk = await readDisk();
-  const room = cloneRoom(disk[id] ?? emptyRoom(id));
+  const room = normalizeRoom(cloneRoom(disk[id] ?? emptyRoom(id)));
   mem[id] = cloneRoom(room);
   return room;
 }
@@ -147,8 +280,13 @@ async function saveRoom(room: Room) {
     room.members = mergeMembers(onDisk.members, room.members);
     room.questions = mergeById(onDisk.questions, room.questions);
     room.wishlist = mergeById(onDisk.wishlist, room.wishlist);
-    room.notes = mergeById(onDisk.notes, room.notes);
-    room.draws = mergeById(onDisk.draws, room.draws);
+    room.notes = mergeById(onDisk.notes ?? [], room.notes);
+    room.draws = mergeById(onDisk.draws ?? [], room.draws);
+    room.letters = mergeById(onDisk.letters ?? [], room.letters);
+    room.events = mergeById(onDisk.events ?? [], room.events);
+    room.gifts = mergeById(onDisk.gifts ?? [], room.gifts);
+    room.memories = mergeById(onDisk.memories ?? [], room.memories);
+    room.daily = mergeDaily(onDisk.daily ?? [], room.daily);
     room.cat.lastCheckin = Math.max(room.cat.lastCheckin, onDisk.cat.lastCheckin);
     room.cat.lastPat = Math.max(room.cat.lastPat, onDisk.cat.lastPat);
   }
@@ -203,6 +341,12 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           createdAt: now,
         });
         room.questions = room.questions.slice(0, 80);
+        remember(room, {
+          kind: "first-question",
+          titleZh: "第一个问题",
+          titleEn: "First question",
+          actor: name,
+        });
         break;
       }
       case "answer": {
@@ -215,6 +359,12 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         q.answer = answer;
         q.answeredBy = name;
         bumpMood(room, 4);
+        remember(room, {
+          kind: "first-answer",
+          titleZh: "第一个回答",
+          titleEn: "First answer",
+          actor: name,
+        });
         break;
       }
       case "addWish": {
@@ -245,6 +395,27 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         break;
       }
       case "draw": {
+        if (action.drawType === "tonight") {
+          const idea = TONIGHT_IDEAS[Math.floor(Math.random() * TONIGHT_IDEAS.length)];
+          touchMember(room, name);
+          room.draws.unshift({
+            id: uid(),
+            type: "tonight",
+            labelZh: "今晚做什么",
+            labelEn: "What tonight",
+            winner: idea.zh,
+            createdAt: now,
+          });
+          room.draws = room.draws.slice(0, 40);
+          bumpMood(room, 3);
+          remember(room, {
+            kind: "first-draw",
+            titleZh: "第一次抽签",
+            titleEn: "First draw",
+            actor: name,
+          });
+          break;
+        }
         const spec = DRAW_TYPES.find((item) => item.id === action.drawType);
         if (!spec) throw new Error("Unknown draw type");
         const names = [...new Set(room.members.map((m) => m.displayName))];
@@ -263,6 +434,12 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         });
         room.draws = room.draws.slice(0, 40);
         bumpMood(room, 3);
+        remember(room, {
+          kind: "first-draw",
+          titleZh: "第一次抽签",
+          titleEn: "First draw",
+          actor: name,
+        });
         break;
       }
       case "addNote": {
@@ -278,11 +455,183 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           createdAt: now,
         });
         room.notes = room.notes.slice(0, 24);
+        remember(room, {
+          kind: "first-note",
+          titleZh: "第一张便签",
+          titleEn: "First sticky note",
+          actor: name,
+        });
         break;
       }
       case "removeNote": {
         touchMember(room, name);
         room.notes = room.notes.filter((item) => item.id !== action.noteId);
+        break;
+      }
+      case "setStatus": {
+        if (!COUPLE_STATUSES.some((item) => item.id === action.statusId)) {
+          throw new Error("Unknown status");
+        }
+        memberOf(room, name).statusId = action.statusId;
+        break;
+      }
+      case "sendLetter": {
+        const text = action.text.trim().slice(0, 280);
+        if (!text) throw new Error("Letter required");
+        touchMember(room, name);
+        room.letters.unshift({
+          id: uid(),
+          from: name,
+          text,
+          createdAt: now,
+          openedAt: null,
+          openedBy: null,
+        });
+        room.letters = room.letters.slice(0, 12);
+        remember(room, {
+          kind: "first-letter",
+          titleZh: "第一封小信",
+          titleEn: "First secret note",
+          actor: name,
+        });
+        break;
+      }
+      case "openLetter": {
+        const letter = room.letters.find((item) => item.id === action.letterId);
+        if (!letter) throw new Error("Letter not found");
+        if (letter.from === name) throw new Error("Leave this letter for them");
+        touchMember(room, name);
+        if (!letter.openedAt) {
+          letter.openedAt = now;
+          letter.openedBy = name;
+        }
+        break;
+      }
+      case "answerDaily": {
+        const text = action.text.trim().slice(0, 280);
+        if (!text) throw new Error("Answer required");
+        const date = todayKey(now);
+        const prompt = promptForDate(date);
+        touchMember(room, name);
+        let day = room.daily.find((item) => item.date === date);
+        if (!day) {
+          day = { date, promptId: prompt.id, answers: [] };
+          room.daily.unshift(day);
+        }
+        const prev = day.answers.find((item) => item.name === name);
+        if (prev) {
+          prev.text = text;
+          prev.at = now;
+        } else {
+          day.answers.push({ name, text, at: now });
+        }
+        room.daily = room.daily.slice(0, 60);
+        break;
+      }
+      case "addEvent": {
+        const title = action.title.trim().slice(0, 80);
+        const date = action.date.trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Pick a date");
+        if (!title) throw new Error("Event title required");
+        if (!EVENT_TYPES.some((item) => item.id === action.eventType)) throw new Error("Unknown event");
+        touchMember(room, name);
+        room.events.unshift({
+          id: uid(),
+          date,
+          eventType: action.eventType,
+          title,
+          addedBy: name,
+          createdAt: now,
+        });
+        room.events = room.events.slice(0, 80);
+        break;
+      }
+      case "removeEvent": {
+        touchMember(room, name);
+        room.events = room.events.filter((item) => item.id !== action.eventId);
+        break;
+      }
+      case "setVibes": {
+        const vibes = [...new Set(action.vibes)].filter((id) => VIBES.some((item) => item.id === id)).slice(0, 5);
+        memberOf(room, name).profile.vibes = vibes;
+        break;
+      }
+      case "setForm": {
+        if (!CAT_FORMS.some((item) => item.id === action.formId)) throw new Error("Unknown form");
+        memberOf(room, name).profile.formId = action.formId;
+        break;
+      }
+      case "setThoughts": {
+        const profile = memberOf(room, name).profile;
+        profile.thinking = action.thinking.trim().slice(0, 80);
+        profile.need = action.need.trim().slice(0, 80);
+        profile.want = action.want.trim().slice(0, 80);
+        break;
+      }
+      case "setSignature": {
+        memberOf(room, name).profile.signature = action.signature.trim().slice(0, 40);
+        break;
+      }
+      case "setPocket": {
+        if (!POCKET_KEYS.some((item) => item.id === action.key)) throw new Error("Unknown pocket");
+        memberOf(room, name).profile.pocket[action.key] = action.value.trim().slice(0, 40);
+        break;
+      }
+      case "setCorner": {
+        if (!WALLS.some((item) => item.id === action.wall)) throw new Error("Unknown wall");
+        const objects = [...new Set(action.objects)]
+          .filter((id) => CORNER_OBJECTS.some((item) => item.id === id))
+          .slice(0, 6);
+        const profile = memberOf(room, name).profile;
+        profile.wall = action.wall;
+        profile.objects = objects;
+        break;
+      }
+      case "setKnowMe": {
+        if (!KNOW_PROMPTS.some((item) => item.id === action.promptId)) throw new Error("Unknown prompt");
+        const answer = action.answer.trim().slice(0, 40);
+        if (!answer) throw new Error("Answer required");
+        const profile = memberOf(room, name).profile;
+        const existing = profile.knowMe.find((item) => item.promptId === action.promptId);
+        if (existing) existing.answer = answer;
+        else profile.knowMe.push({ promptId: action.promptId, answer });
+        break;
+      }
+      case "guessKnowMe": {
+        const target = room.members.find((item) => item.displayName === action.target.trim());
+        if (!target) throw new Error("They're not in the den yet");
+        const secret = target.profile.knowMe.find((item) => item.promptId === action.promptId);
+        if (!secret) throw new Error("They haven't answered this yet");
+        const guess = action.guess.trim().slice(0, 40);
+        if (!guess) throw new Error("Guess required");
+        const profile = memberOf(room, name).profile;
+        const correct = guess.toLowerCase() === secret.answer.toLowerCase();
+        const prev = profile.guesses.find((item) => item.target === target.displayName && item.promptId === action.promptId);
+        if (prev) {
+          prev.correct = correct;
+          prev.at = now;
+        } else {
+          profile.guesses.push({ target: target.displayName, promptId: action.promptId, correct, at: now });
+        }
+        break;
+      }
+      case "gift": {
+        const targetName = action.target.trim();
+        if (!room.members.some((item) => item.displayName === targetName)) {
+          throw new Error("They're not in the den yet");
+        }
+        if (targetName === name) throw new Error("Leave this for them");
+        if (!GIFT_KINDS.some((item) => item.id === action.kind)) throw new Error("Unknown gift");
+        touchMember(room, name);
+        room.gifts.unshift({
+          id: uid(),
+          from: name,
+          to: targetName,
+          kind: action.kind,
+          createdAt: now,
+        });
+        room.gifts = room.gifts.slice(0, 30);
+        bumpMood(room, 2);
         break;
       }
       default:

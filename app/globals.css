@@ -27,12 +27,26 @@ body {
   min-height: 100%;
 }
 
-body {
+html[data-sky="night"] body {
   background:
-    radial-gradient(1200px 500px at 10% -10%, #ffe4e8 0%, transparent 55%),
-    radial-gradient(900px 400px at 110% 0%, #fde8c8 0%, transparent 50%),
-    var(--cream);
-  color: var(--ink);
+    radial-gradient(900px 420px at 20% -10%, #3a3148 0%, transparent 55%),
+    radial-gradient(700px 360px at 100% 0%, #4a3944 0%, transparent 50%),
+    #2c2428;
+  color: #f6ebe6;
+}
+
+html[data-sky="night"] .card {
+  background: #3a3034;
+  border-color: rgba(247, 214, 217, 0.16);
+  color: #f6ebe6;
+}
+
+.stars {
+  display: none;
+}
+
+html[data-sky="night"] .stars {
+  display: block;
 }
 
 * {

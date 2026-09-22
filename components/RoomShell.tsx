@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { readSession } from "@/lib/session";
 import { useRoom } from "@/lib/use-room";
+import { isNight } from "@/lib/cottage";
 import type { ClientAction, Room } from "@/lib/types";
 
 type RoomContextValue = {
@@ -35,6 +36,15 @@ export function RoomShell({
   const router = useRouter();
   const [name, setName] = useState<string | null>(null);
   const roomState = useRoom(roomId, name);
+
+  useEffect(() => {
+    const apply = () => {
+      document.documentElement.dataset.sky = isNight() ? "night" : "day";
+    };
+    apply();
+    const timer = setInterval(apply, 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const session = readSession();
@@ -69,13 +79,22 @@ export function RoomShell({
               {roomId} · 你是 {name}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="rounded-full border border-[var(--line)] bg-card px-3 py-1 text-xs text-muted"
-          >
-            换房间 Switch
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push(`/room/${encodeURIComponent(roomId)}/corner`)}
+              className="rounded-full border border-[var(--line)] bg-card px-3 py-1 text-xs text-muted"
+            >
+              角落 Corner
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="rounded-full border border-[var(--line)] bg-card px-3 py-1 text-xs text-muted"
+            >
+              换房间 Switch
+            </button>
+          </div>
         </header>
         <main className="px-4 pb-28 pt-4">{children}</main>
         <BottomNav room={roomId} />

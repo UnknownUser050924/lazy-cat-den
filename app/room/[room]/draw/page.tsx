@@ -14,7 +14,7 @@ export default function DrawPage() {
   const members = [...new Set(room.members.map((m) => m.displayName))];
 
   async function draw(drawType: string) {
-    if (members.length < 2) {
+    if (drawType !== "tonight" && members.length < 2) {
       setError("再等一个人进小屋吧 Need two people first");
       return;
     }
@@ -38,6 +38,15 @@ export default function DrawPage() {
           现在小屋里还不够两个人。把邀请链接发给对方吧。
         </p>
       ) : null}
+      <button
+        disabled={busy || spinning !== null}
+        onClick={() => draw("tonight")}
+        className="card soft-btn w-full rounded-[24px] p-4 text-left disabled:opacity-60"
+      >
+        <div className="font-bold">今晚做什么</div>
+        <div className="text-xs text-muted">What should we do tonight</div>
+        {spinning === "tonight" ? <p className="mt-2 text-xs text-rose">抽签中…</p> : null}
+      </button>
       <div className="grid grid-cols-2 gap-3">
         {DRAW_TYPES.map((item) => (
           <button
