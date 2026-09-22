@@ -95,8 +95,6 @@ export default function CottagePage() {
       </section>
 
       <section className="card relative overflow-hidden rounded-[28px] px-4 pb-5 pt-6 text-center">
-        <div className="pointer-events-none absolute left-6 top-4 text-xs text-muted">cloud</div>
-        <div className="pointer-events-none absolute right-6 top-6 text-xs text-muted">cloud</div>
         <CatMascot mood={room.cat.mood} size={180} sleeping={night} onPat={() => act({ type: "pat" })} />
         <p className="text-lg font-extrabold">{speech.zh}</p>
         <p className="text-xs text-muted">{speech.en}</p>

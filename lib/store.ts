@@ -90,6 +90,7 @@ function emptyRoom(id: string): Room {
     events: [],
     gifts: [],
     memories: [],
+    pats: [],
     cat: {
       mood: 72,
       lastPat: 0,
@@ -107,8 +108,10 @@ function mergeProfile(a: Profile, b: Profile, aNewer: boolean): Profile {
   const primary = aNewer ? a : b;
   const other = aNewer ? b : a;
   const guesses = new Map<string, Profile["guesses"][number]>();
-  for (const guess of [...other.guesses, ...primary.guesses]) {
-    guesses.set(`${guess.target}:${guess.promptId}`, guess);
+  for (const guess of [...(other.guesses ?? []), ...(primary.guesses ?? [])]) {
+    const key = `${guess.target}:${guess.promptId}`;
+    const prev = guesses.get(key);
+    if (!prev || (guess.at ?? 0) >= (prev.at ?? 0)) guesses.set(key, guess);
   }
   return {
     gender: primary.gender || other.gender,
@@ -118,12 +121,31 @@ function mergeProfile(a: Profile, b: Profile, aNewer: boolean): Profile {
     thinking: primary.thinking || other.thinking,
     need: primary.need || other.need,
     want: primary.want || other.want,
-    pocket: { ...other.pocket, ...Object.fromEntries(Object.entries(primary.pocket).filter(([, value]) => value)) },
+    pocket: mergePocket(primary.pocket, other.pocket),
     wall: primary.wall || other.wall,
     objects: primary.objects.length ? primary.objects : other.objects,
-    knowMe: primary.knowMe.length ? primary.knowMe : other.knowMe,
+    knowMe: mergeKnow(primary.knowMe, other.knowMe),
     guesses: [...guesses.values()],
   };
+}
+
+function mergePocket(primary: Profile["pocket"], other: Profile["pocket"]) {
+  const pocket: Record<string, string> = {};
+  for (const [key, value] of Object.entries(other ?? {})) {
+    if (value?.trim()) pocket[key] = value;
+  }
+  for (const [key, value] of Object.entries(primary ?? {})) {
+    if (value?.trim()) pocket[key] = value;
+  }
+  return pocket;
+}
+
+function mergeKnow(primary: Profile["knowMe"], other: Profile["knowMe"]) {
+  const map = new Map<string, Profile["knowMe"][number]>();
+  for (const item of [...(other ?? []), ...(primary ?? [])]) {
+    if (item?.answer?.trim()) map.set(item.promptId, { promptId: item.promptId, answer: item.answer });
+  }
+  return [...map.values()];
 }
 
 function mergeMembers(a: Member[], b: Member[]): Member[] {
@@ -176,6 +198,7 @@ function normalizeRoom(room: Room): Room {
   room.events = room.events ?? [];
   room.gifts = room.gifts ?? [];
   room.memories = room.memories ?? [];
+  room.pats = room.pats ?? [];
   return room;
 }
 
@@ -242,6 +265,7 @@ function mergeRooms(left: Room, right: Room): Room {
   room.events = mergeById(other.events ?? [], room.events ?? []);
   room.gifts = mergeById(other.gifts ?? [], room.gifts ?? []);
   room.memories = mergeById(other.memories ?? [], room.memories ?? []);
+  room.pats = mergePats(other.pats, room.pats);
   room.daily = mergeDaily(other.daily ?? [], room.daily ?? []);
   room.cat.lastCheckin = Math.max(room.cat.lastCheckin, other.cat.lastCheckin);
   room.cat.lastPat = Math.max(room.cat.lastPat, other.cat.lastPat);
@@ -254,6 +278,36 @@ function mergeById<T extends { id: string; createdAt: number }>(a: T[], b: T[]):
   for (const item of [...a, ...b]) map.set(item.id, item);
   return [...map.values()].sort((x, y) => y.createdAt - x.createdAt);
 }
+
+function mergePats(a: Room["pats"], b: Room["pats"]) {
+  const map = new Map<string, Room["pats"][number]>();
+  for (const item of [...(a ?? []), ...(b ?? [])]) map.set(item.id, item);
+  return [...map.values()].sort((x, y) => y.at - x.at).slice(0, 40);
+}
+
+const MEMORY_PLACE: Record<string, string> = {
+  joined: "",
+  "first-question": "qa",
+  question: "qa",
+  "first-answer": "qa",
+  answer: "qa",
+  "first-draw": "draw",
+  draw: "draw",
+  "first-note": "",
+  note: "",
+  "first-letter": "letter",
+  letter: "letter",
+  "letter-open": "letter",
+  "first-chat": "chat",
+  wish: "wishlist",
+  "cat-100": "cat",
+  pat: "cat",
+  gift: "corner",
+  pocket: "corner",
+  know: "corner",
+  today: "today",
+  event: "calendar",
+};
 
 function applyDecay(room: Room) {
   const now = Date.now();
@@ -286,8 +340,18 @@ function remember(room: Room, memory: Omit<Memory, "id" | "createdAt">) {
   if (memory.kind === "joined" && room.memories.some((item) => item.kind === "joined" && item.actor === memory.actor)) {
     return;
   }
-  room.memories.unshift({ ...memory, id: uid(), createdAt: Date.now() });
-  room.memories = room.memories.slice(0, 40);
+  room.memories.unshift({
+    ...memory,
+    place: memory.place ?? MEMORY_PLACE[memory.kind] ?? "",
+    id: uid(),
+    createdAt: Date.now(),
+  });
+  room.memories = room.memories.slice(0, 80);
+}
+
+function sameAnswer(guess: string, secret: string) {
+  const norm = (value: string) => value.trim().toLowerCase().replace(/\s+/g, "");
+  return norm(guess) === norm(secret);
 }
 
 function touchMember(room: Room, displayName: string) {
@@ -389,7 +453,16 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         touchMember(room, name);
         room.cat.lastPat = now;
         room.cat.lastCheckin = now;
+        room.pats.unshift({ id: uid(), name, at: now });
+        room.pats = room.pats.slice(0, 40);
         bumpMood(room, 16);
+        remember(room, {
+          kind: "pat",
+          titleZh: `${name}摸了摸懒猫`,
+          titleEn: `${name} patted the cat`,
+          actor: name,
+          place: "cat",
+        });
         break;
       }
       case "ask": {
@@ -410,6 +483,14 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           titleZh: "第一个问题",
           titleEn: "First question",
           actor: name,
+          place: "qa",
+        });
+        remember(room, {
+          kind: "question",
+          titleZh: `问了：${question.slice(0, 28)}`,
+          titleEn: "Asked a question",
+          actor: name,
+          place: "qa",
         });
         break;
       }
@@ -428,6 +509,14 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           titleZh: "第一个回答",
           titleEn: "First answer",
           actor: name,
+          place: "qa",
+        });
+        remember(room, {
+          kind: "answer",
+          titleZh: `答了：${answer.slice(0, 28)}`,
+          titleEn: "Answered a question",
+          actor: name,
+          place: "qa",
         });
         break;
       }
@@ -443,6 +532,13 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           createdAt: now,
         });
         room.wishlist = room.wishlist.slice(0, 80);
+        remember(room, {
+          kind: "wish",
+          titleZh: `许了愿：${text.slice(0, 28)}`,
+          titleEn: "Added a wish",
+          actor: name,
+          place: "wishlist",
+        });
         break;
       }
       case "toggleWish": {
@@ -498,6 +594,14 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           titleZh: "第一次抽签",
           titleEn: "First draw",
           actor: name,
+          place: "draw",
+        });
+        remember(room, {
+          kind: "draw",
+          titleZh: `${room.draws[0].labelZh}：${room.draws[0].winner}`,
+          titleEn: room.draws[0].labelEn,
+          actor: name,
+          place: "draw",
         });
         break;
       }
@@ -519,6 +623,14 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           titleZh: "第一张便签",
           titleEn: "First sticky note",
           actor: name,
+          place: "",
+        });
+        remember(room, {
+          kind: "note",
+          titleZh: `贴了便签：${text.slice(0, 28)}`,
+          titleEn: "Left a note",
+          actor: name,
+          place: "",
         });
         break;
       }
@@ -538,6 +650,7 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           titleZh: "第一次聊天",
           titleEn: "First chat",
           actor: name,
+          place: "chat",
         });
         break;
       }
@@ -571,6 +684,14 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           titleZh: "第一封小信",
           titleEn: "First secret note",
           actor: name,
+          place: "letter",
+        });
+        remember(room, {
+          kind: "letter",
+          titleZh: `${name}留了一封信`,
+          titleEn: "Left a letter",
+          actor: name,
+          place: "letter",
         });
         break;
       }
@@ -582,6 +703,13 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         if (!letter.openedAt) {
           letter.openedAt = now;
           letter.openedBy = name;
+          remember(room, {
+            kind: "letter-open",
+            titleZh: `${name}打开了信`,
+            titleEn: "Opened a letter",
+            actor: name,
+            place: "letter",
+          });
         }
         break;
       }
@@ -604,6 +732,13 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           day.answers.push({ name, text, at: now });
         }
         room.daily = room.daily.slice(0, 60);
+        remember(room, {
+          kind: "today",
+          titleZh: `今日回答：${text.slice(0, 28)}`,
+          titleEn: "Answered today",
+          actor: name,
+          place: "today",
+        });
         break;
       }
       case "addEvent": {
@@ -622,6 +757,13 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           createdAt: now,
         });
         room.events = room.events.slice(0, 80);
+        remember(room, {
+          kind: "event",
+          titleZh: `记下了：${title.slice(0, 28)}`,
+          titleEn: "Added a day",
+          actor: name,
+          place: "calendar",
+        });
         break;
       }
       case "removeEvent": {
@@ -659,7 +801,18 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
       }
       case "setPocket": {
         if (!POCKET_KEYS.some((item) => item.id === action.key)) throw new Error("Unknown pocket");
-        memberOf(room, name).profile.pocket[action.key] = action.value.trim().slice(0, 40);
+        const value = action.value.trim().slice(0, 40);
+        memberOf(room, name).profile.pocket[action.key] = value;
+        if (value) {
+          const label = POCKET_KEYS.find((item) => item.id === action.key)?.zh ?? "口袋";
+          remember(room, {
+            kind: "pocket",
+            titleZh: `${name}写下了${label}`,
+            titleEn: "Filled a pocket",
+            actor: name,
+            place: "corner",
+          });
+        }
         break;
       }
       case "setCorner": {
@@ -680,17 +833,26 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         const existing = profile.knowMe.find((item) => item.promptId === action.promptId);
         if (existing) existing.answer = answer;
         else profile.knowMe.push({ promptId: action.promptId, answer });
+        const label = KNOW_PROMPTS.find((item) => item.id === action.promptId)?.zh ?? "Know Me";
+        remember(room, {
+          kind: "know",
+          titleZh: `${name}写下了：${label}`,
+          titleEn: "Answered Know Me",
+          actor: name,
+          place: "corner",
+        });
         break;
       }
       case "guessKnowMe": {
         const target = room.members.find((item) => item.displayName === action.target.trim());
         if (!target) throw new Error("They're not in the den yet");
+        if (target.displayName === name) throw new Error("This one is for them to guess");
         const secret = target.profile.knowMe.find((item) => item.promptId === action.promptId);
-        if (!secret) throw new Error("They haven't answered this yet");
+        if (!secret?.answer?.trim()) throw new Error("They haven't answered this yet");
         const guess = action.guess.trim().slice(0, 40);
         if (!guess) throw new Error("Guess required");
         const profile = memberOf(room, name).profile;
-        const correct = guess.toLowerCase() === secret.answer.toLowerCase();
+        const correct = sameAnswer(guess, secret.answer);
         const prev = profile.guesses.find((item) => item.target === target.displayName && item.promptId === action.promptId);
         if (prev) {
           prev.correct = correct;
@@ -717,6 +879,14 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         });
         room.gifts = room.gifts.slice(0, 30);
         bumpMood(room, 2);
+        const giftLabel = GIFT_KINDS.find((item) => item.id === action.kind)?.zh ?? "礼物";
+        remember(room, {
+          kind: "gift",
+          titleZh: `${name}给${targetName}${giftLabel}`,
+          titleEn: "Left a gift",
+          actor: name,
+          place: "corner",
+        });
         break;
       }
       default:

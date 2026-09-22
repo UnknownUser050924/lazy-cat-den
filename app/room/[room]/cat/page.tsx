@@ -44,6 +44,21 @@ export default function CatPage() {
           摸摸猫 Pat
         </button>
       </section>
+      <section className="card rounded-[24px] p-4 text-left">
+        <h2 className="font-bold">谁摸过 Who patted</h2>
+        { (room.pats ?? []).length === 0 ? (
+          <p className="mt-2 text-sm text-muted">还没有人摸。Pat the cat and it will show up here.</p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {(room.pats ?? []).map((item) => (
+              <li key={item.id} className="flex items-center justify-between text-sm">
+                <span className="font-bold">{item.name}</span>
+                <span className="text-muted">{formatTime(item.at)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       <section className="card rounded-[24px] p-4 text-left text-sm text-muted">
         <p>上次被摸 {room.cat.lastPat ? formatTime(room.cat.lastPat) : "还没有 never"}</p>
         <p className="mt-1">

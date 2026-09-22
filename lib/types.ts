@@ -107,6 +107,13 @@ export type Memory = {
   titleEn: string;
   actor: string;
   createdAt: number;
+  place?: string;
+};
+
+export type Pat = {
+  id: string;
+  name: string;
+  at: number;
 };
 
 export type CatState = {
@@ -130,6 +137,7 @@ export type Room = {
   events: CalEvent[];
   gifts: Gift[];
   memories: Memory[];
+  pats: Pat[];
   cat: CatState;
 };
 

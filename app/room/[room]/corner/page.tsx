@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRoomContext } from "@/components/RoomShell";
 import {
   CAT_FORMS,
@@ -154,15 +154,13 @@ export default function CornerPage() {
       <section className="space-y-2">
         <h2 className="font-bold">我的口袋</h2>
         {POCKET_KEYS.map((key) => (
-          <label key={key.id} className="block text-sm">
+          <label key={`${member.displayName}-${key.id}`} className="block text-sm">
             {key.zh}
-            <input
-              defaultValue={member.profile.pocket[key.id] ?? ""}
-              disabled={!mine}
-              onBlur={(event) => {
-                if (mine) act({ type: "setPocket", key: key.id, value: event.target.value });
-              }}
-              className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-2"
+            <SavedField
+              saved={member.profile.pocket[key.id] ?? ""}
+              readOnly={!mine}
+              placeholder={mine ? key.en : "还没写"}
+              onSave={(value) => act({ type: "setPocket", key: key.id, value })}
             />
           </label>
         ))}
@@ -208,23 +206,23 @@ export default function CornerPage() {
         <h2 className="font-bold">Know Me? · {understood}%</h2>
         {KNOW_PROMPTS.map((prompt) => {
           const secret = member.profile.knowMe.find((item) => item.promptId === prompt.id);
+          const mineGuess = room.members
+            .find((item) => item.displayName === displayName)
+            ?.profile.guesses.find((item) => item.target === member.displayName && item.promptId === prompt.id);
           return (
-            <div key={prompt.id} className="card rounded-2xl p-3">
+            <div key={`${member.displayName}-${prompt.id}`} className="card rounded-2xl p-3">
               <p className="text-sm font-bold">{prompt.zh}</p>
               {mine ? (
-                <input
-                  defaultValue={secret?.answer ?? ""}
+                <SavedField
+                  saved={secret?.answer ?? ""}
                   placeholder="只有你先写答案"
-                  onBlur={(event) => {
-                    if (event.target.value.trim()) {
-                      act({ type: "setKnowMe", promptId: prompt.id, answer: event.target.value });
-                    }
+                  onSave={(value) => {
+                    if (value.trim()) act({ type: "setKnowMe", promptId: prompt.id, answer: value });
                   }}
-                  className="mt-2 w-full rounded-xl border border-[var(--line)] bg-cream/40 px-3 py-2 text-sm"
                 />
-              ) : (
+              ) : secret?.answer ? (
                 <form
-                  className="mt-2 flex gap-2"
+                  className="mt-2 space-y-2"
                   onSubmit={async (event) => {
                     event.preventDefault();
                     const guess = guesses[prompt.id]?.trim();
@@ -240,17 +238,27 @@ export default function CornerPage() {
                     const result = me?.profile.guesses.find(
                       (item) => item.target === member.displayName && item.promptId === prompt.id,
                     );
+                    setGuesses((prev) => ({ ...prev, [prompt.id]: "" }));
                     setError(result?.correct ? "你猜中了" : "还没猜中");
                   }}
                 >
-                  <input
-                    value={guesses[prompt.id] ?? ""}
-                    onChange={(event) => setGuesses((prev) => ({ ...prev, [prompt.id]: event.target.value }))}
-                    placeholder="猜一猜"
-                    className="flex-1 rounded-xl border border-[var(--line)] px-3 py-2 text-sm"
-                  />
-                  <button className="text-sm font-bold text-rose">猜</button>
+                  <div className="flex gap-2">
+                    <input
+                      value={guesses[prompt.id] ?? ""}
+                      onChange={(event) => setGuesses((prev) => ({ ...prev, [prompt.id]: event.target.value }))}
+                      placeholder="猜一猜"
+                      className="flex-1 rounded-xl border border-[var(--line)] px-3 py-2 text-sm"
+                    />
+                    <button className="text-sm font-bold text-rose">猜</button>
+                  </div>
+                  {mineGuess ? (
+                    <p className={`text-xs font-bold ${mineGuess.correct ? "text-rose-deep" : "text-muted"}`}>
+                      {mineGuess.correct ? "猜中了" : "还没猜中"}
+                    </p>
+                  ) : null}
                 </form>
+              ) : (
+                <p className="mt-2 text-sm text-muted">还没写这个答案</p>
               )}
             </div>
           );
@@ -285,6 +293,42 @@ export default function CornerPage() {
       ) : null}
       {error ? <p className="text-sm text-rose-deep">{error}</p> : null}
     </div>
+  );
+}
+
+function SavedField({
+  saved,
+  readOnly = false,
+  placeholder,
+  onSave,
+}: {
+  saved: string;
+  readOnly?: boolean;
+  placeholder?: string;
+  onSave?: (value: string) => void;
+}) {
+  const [value, setValue] = useState(saved);
+  const focused = useRef(false);
+
+  useEffect(() => {
+    if (!focused.current) setValue(saved);
+  }, [saved]);
+
+  return (
+    <input
+      value={readOnly ? saved : value}
+      readOnly={readOnly}
+      placeholder={placeholder}
+      onFocus={() => {
+        focused.current = true;
+      }}
+      onChange={(event) => setValue(event.target.value)}
+      onBlur={() => {
+        focused.current = false;
+        if (!readOnly && onSave && value.trim() !== saved.trim()) onSave(value);
+      }}
+      className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-2"
+    />
   );
 }
 
