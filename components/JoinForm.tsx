@@ -3,28 +3,38 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CatMascot } from "@/components/CatMascot";
-import { DEFAULT_NAMES, DEFAULT_ROOM, slugifyRoom } from "@/lib/constants";
+import { DEFAULT_ROOM, slugifyRoom } from "@/lib/constants";
 import { readSession, writeSession } from "@/lib/session";
 
 export function JoinForm({
   initialRoom = "",
+  invited = false,
   joined = "",
 }: {
   initialRoom?: string;
+  invited?: boolean;
   joined?: string;
 }) {
   const router = useRouter();
   const [room, setRoom] = useState(initialRoom || DEFAULT_ROOM);
+  const [fromInvite, setFromInvite] = useState(invited);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (initialRoom) return;
+    const params = new URLSearchParams(window.location.search);
+    const roomFromUrl = params.get("room")?.trim() ?? "";
+    if (roomFromUrl) {
+      setRoom(roomFromUrl);
+      setFromInvite(true);
+      setName("");
+      return;
+    }
     const existing = readSession();
     if (existing?.room) setRoom(existing.room);
     if (existing?.displayName) setName(existing.displayName);
-  }, [initialRoom]);
+  }, []);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -80,42 +90,45 @@ export function JoinForm({
           <input
             name="room"
             value={room}
+            readOnly={fromInvite}
             onChange={(e) => setRoom(e.target.value)}
             placeholder={DEFAULT_ROOM}
-            className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-cream/60 px-4 py-3 outline-none focus:border-rose"
+            className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-cream/60 px-4 py-3 outline-none focus:border-rose read-only:opacity-80"
           />
         </label>
-        <button
-          type="button"
-          onClick={() => setRoom(DEFAULT_ROOM)}
-          className="text-xs text-rose"
-        >
-          用建议名 use {DEFAULT_ROOM}
-        </button>
+        {fromInvite ? (
+          <p className="text-xs text-muted">你被邀请进这个房间。请写下你自己的名字。</p>
+        ) : (
+          <button type="button" onClick={() => setRoom(DEFAULT_ROOM)} className="text-xs text-rose">
+            用建议名 use {DEFAULT_ROOM}
+          </button>
+        )}
         <label className="block">
           <span className="text-xs font-bold text-muted">你的名字 Your name</span>
           <input
             name="displayName"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="嘉怡 或 宝宝"
+            placeholder={fromInvite ? "Grok, ChatGPT, or your name" : "嘉怡 或 宝宝"}
             className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-cream/60 px-4 py-3 outline-none focus:border-rose"
           />
         </label>
-        <div className="flex gap-2">
-          {DEFAULT_NAMES.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setName(item)}
-              className={`soft-btn flex-1 rounded-full px-3 py-2 text-sm font-bold ${
-                name === item ? "bg-rose text-white" : "bg-blush text-rose-deep"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
+        {fromInvite ? null : (
+          <div className="flex gap-2">
+            {["嘉怡", "宝宝"].map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setName(item)}
+                className={`soft-btn flex-1 rounded-full px-3 py-2 text-sm font-bold ${
+                  name === item ? "bg-rose text-white" : "bg-blush text-rose-deep"
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        )}
         {error ? <p className="text-sm text-rose-deep">{error}</p> : null}
         <button
           disabled={busy}

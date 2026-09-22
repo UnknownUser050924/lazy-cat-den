@@ -79,8 +79,8 @@ export default function CottagePage() {
           ✦ ✦ ✦
         </div>
         <p className="text-center text-sm font-bold">小屋今天也有人来啦</p>
-        <div className="mt-3 grid grid-cols-2 gap-3 text-center">
-          {people.slice(0, 2).map((member) => {
+        <div className="mt-3 flex flex-wrap justify-center gap-3">
+          {people.map((member) => {
             const status = COUPLE_STATUSES.find((item) => item.id === member.statusId);
             const here = member.displayName === displayName || isHere(member);
             return (
