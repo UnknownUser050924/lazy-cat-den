@@ -72,6 +72,7 @@ export default function CottagePage() {
               <div key={member.displayName}>
                 <p className="font-extrabold">{member.displayName}</p>
                 <p className="text-xs text-muted">{label}</p>
+                <p className="mt-1 max-w-36 text-sm">{member.profile.signature || "还没写签名"}</p>
                 <p className="mt-1 text-sm text-rose-deep">{status ? status.zh : "还没说状态"}</p>
               </div>
             );

@@ -47,7 +47,7 @@ export default function CornerPage() {
         <p className="text-sm text-muted">
           {form.zh} · {form.line}
         </p>
-        {member.profile.signature ? <p className="mt-2 text-lg">{member.profile.signature}</p> : null}
+        {member.profile.signature ? <p className="mt-2 text-lg">{member.profile.signature}</p> : <p className="mt-2 text-sm text-muted">还没写签名</p>}
       </header>
 
       <div className="flex justify-center gap-2">
@@ -134,22 +134,29 @@ export default function CornerPage() {
               ))}
             </div>
           </div>
-          <label className="block text-sm">
-            签名
-            <SavedField
-              saved={member.profile.signature}
-              placeholder="写一句签名"
-              onSave={(value) => act({ type: "setSignature", signature: value })}
-            />
-          </label>
         </section>
       ) : (
         <section className="card space-y-2 rounded-[24px] p-4 text-sm">
+          <p>签名 {member.profile.signature || "还没写"}</p>
           <p>在想 {member.profile.thinking || "…"}</p>
           <p>需要 {member.profile.need || "…"}</p>
           <p>想要 {member.profile.want || "…"}</p>
         </section>
       )}
+
+      <section className="space-y-2">
+        <h2 className="font-bold">签名</h2>
+        {mine ? (
+          <SavedField
+            key={`${member.displayName}-signature`}
+            saved={member.profile.signature}
+            placeholder="写一句签名"
+            onSave={(value) => act({ type: "setSignature", signature: value })}
+          />
+        ) : (
+          <p className="card rounded-2xl px-4 py-3">{member.profile.signature || "还没写"}</p>
+        )}
+      </section>
 
       <section className="space-y-2">
         <h2 className="font-bold">我的口袋</h2>
