@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { slugifyRoom } from "@/lib/constants";
 import { sessionFromRequest } from "@/lib/session";
-import { applyAction, getRoom, notePresence } from "@/lib/store";
+import { applyAction, getRoom, notePresence, restoreRoom } from "@/lib/store";
 import type { RoomAction } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +29,12 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Invalid room" }, { status: 400 });
   }
   try {
-    const body = (await req.json()) as RoomAction;
-    const data = await applyAction(id, body);
+    const body = (await req.json()) as { type?: string; room?: unknown };
+    if (body.type === "restore") {
+      const data = await restoreRoom(id, body.room);
+      return NextResponse.json(data);
+    }
+    const data = await applyAction(id, body as RoomAction);
     return NextResponse.json(data);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Bad request";

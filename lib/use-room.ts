@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { backupHasMore, readBackup, writeBackup } from "./backup";
 import type { ClientAction, Room } from "./types";
 
 export function useRoom(roomId: string, displayName: string | null) {
@@ -8,6 +9,7 @@ export function useRoom(roomId: string, displayName: string | null) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const revision = useRef(0);
+  const restoring = useRef(false);
 
   const refresh = useCallback(async () => {
     const seen = revision.current;
@@ -15,13 +17,33 @@ export function useRoom(roomId: string, displayName: string | null) {
       cache: "no-store",
     });
     if (!res.ok) throw new Error("Could not load room");
-    const data = (await res.json()) as Room;
+    let data = (await res.json()) as Room;
+    const backup = readBackup(roomId);
+    if (backup && !restoring.current && backupHasMore(backup, data)) {
+      restoring.current = true;
+      try {
+        const restored = await fetch(`/api/rooms/${encodeURIComponent(roomId)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "restore",
+            displayName: displayName || backup.members[0]?.displayName || "",
+            room: backup,
+          }),
+        });
+        if (restored.ok) data = (await restored.json()) as Room;
+      } finally {
+        restoring.current = false;
+      }
+    }
+    const kept = readBackup(roomId);
+    if (!kept || !backupHasMore(kept, data)) writeBackup(data);
     if (revision.current === seen) {
       setRoom(data);
       setError(null);
     }
     return data;
-  }, [roomId]);
+  }, [displayName, roomId]);
 
   const act = useCallback(
     async (action: ClientAction) => {
@@ -36,9 +58,12 @@ export function useRoom(roomId: string, displayName: string | null) {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Something went wrong");
         revision.current += 1;
-        setRoom(data as Room);
+        const next = data as Room;
+        setRoom(next);
+        const kept = readBackup(roomId);
+        if (!kept || !backupHasMore(kept, next)) writeBackup(next);
         setError(null);
-        return data as Room;
+        return next;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Something went wrong";
         setError(message);

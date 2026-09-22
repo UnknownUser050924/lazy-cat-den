@@ -136,10 +136,10 @@ export default function CornerPage() {
           </div>
           <label className="block text-sm">
             签名
-            <input
-              defaultValue={member.profile.signature}
-              onBlur={(event) => act({ type: "setSignature", signature: event.target.value })}
-              className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-2"
+            <SavedField
+              saved={member.profile.signature}
+              placeholder="写一句签名"
+              onSave={(value) => act({ type: "setSignature", signature: value })}
             />
           </label>
         </section>
@@ -309,10 +309,31 @@ function SavedField({
 }) {
   const [value, setValue] = useState(saved);
   const focused = useRef(false);
+  const valueRef = useRef(value);
+  const savedRef = useRef(saved);
+  const saveRef = useRef(onSave);
+  valueRef.current = value;
+  savedRef.current = saved;
+  saveRef.current = onSave;
 
   useEffect(() => {
     if (!focused.current) setValue(saved);
   }, [saved]);
+
+  useEffect(() => {
+    if (readOnly) return;
+    if (value.trim() === saved.trim()) return;
+    const timer = setTimeout(() => saveRef.current?.(value), 700);
+    return () => clearTimeout(timer);
+  }, [readOnly, saved, value]);
+
+  useEffect(() => {
+    return () => {
+      if (valueRef.current.trim() !== savedRef.current.trim()) {
+        saveRef.current?.(valueRef.current);
+      }
+    };
+  }, []);
 
   return (
     <input
@@ -325,7 +346,7 @@ function SavedField({
       onChange={(event) => setValue(event.target.value)}
       onBlur={() => {
         focused.current = false;
-        if (!readOnly && onSave && value.trim() !== saved.trim()) onSave(value);
+        if (!readOnly && value.trim() !== saved.trim()) saveRef.current?.(value);
       }}
       className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-2"
     />
@@ -350,6 +371,28 @@ function Thoughts({
   const [thinking, setThinking] = useState(member.profile.thinking);
   const [need, setNeed] = useState(member.profile.need);
   const [want, setWant] = useState(member.profile.want);
+  const saveRef = useRef(onSave);
+  saveRef.current = onSave;
+  const draft = useRef({ thinking, need, want });
+  draft.current = { thinking, need, want };
+
+  useEffect(() => {
+    const same =
+      thinking === member.profile.thinking &&
+      need === member.profile.need &&
+      want === member.profile.want;
+    if (same) return;
+    const timer = setTimeout(() => saveRef.current(thinking, need, want), 700);
+    return () => clearTimeout(timer);
+  }, [member.profile.need, member.profile.thinking, member.profile.want, need, thinking, want]);
+
+  useEffect(() => {
+    return () => {
+      const current = draft.current;
+      saveRef.current(current.thinking, current.need, current.want);
+    };
+  }, []);
+
   return (
     <form
       className="space-y-2"
@@ -361,7 +404,7 @@ function Thoughts({
       <input value={thinking} onChange={(event) => setThinking(event.target.value)} placeholder="我在想…" className="w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-2" />
       <input value={need} onChange={(event) => setNeed(event.target.value)} placeholder="我需要…" className="w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-2" />
       <input value={want} onChange={(event) => setWant(event.target.value)} placeholder="我想要…" className="w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-2" />
-      <button className="text-sm font-bold text-rose">保存现在的我</button>
+      <p className="text-xs text-muted">写完会自己保存</p>
     </form>
   );
 }

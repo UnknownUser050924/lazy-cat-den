@@ -117,12 +117,12 @@ function mergeProfile(a: Profile, b: Profile, aNewer: boolean): Profile {
     gender: primary.gender || other.gender,
     signature: primary.signature || other.signature,
     vibes: primary.vibes.length ? primary.vibes : other.vibes,
-    formId: primary.formId || other.formId,
+    formId: primary.formId && primary.formId !== "sleepy" ? primary.formId : other.formId || primary.formId,
     thinking: primary.thinking || other.thinking,
     need: primary.need || other.need,
     want: primary.want || other.want,
     pocket: mergePocket(primary.pocket, other.pocket),
-    wall: primary.wall || other.wall,
+    wall: primary.wall && primary.wall !== "cozy" ? primary.wall : other.wall || primary.wall,
     objects: primary.objects.length ? primary.objects : other.objects,
     knowMe: mergeKnow(primary.knowMe, other.knowMe),
     guesses: [...guesses.values()],
@@ -431,6 +431,65 @@ export async function getRoom(id: string): Promise<Room> {
     const room = applyDecay(await loadRoom(id));
     store().rooms[id] = cloneRoom(room);
     return cloneRoom(room);
+  });
+}
+
+function takeList<T>(value: unknown, limit: number): T[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item) => item && typeof item === "object").slice(0, limit) as T[];
+}
+
+function sanitizeRoom(id: string, raw: unknown): Room | null {
+  if (!raw || typeof raw !== "object") return null;
+  const src = raw as Partial<Room>;
+  const base = emptyRoom(id);
+  const cat = src.cat && typeof src.cat === "object" ? src.cat : base.cat;
+  const mood = Number(cat.mood);
+  const room = normalizeRoom({
+    ...base,
+    id,
+    createdAt: typeof src.createdAt === "number" ? src.createdAt : base.createdAt,
+    members: takeList(src.members, 8),
+    questions: takeList(src.questions, 80),
+    wishlist: takeList(src.wishlist, 80),
+    notes: takeList(src.notes, 24),
+    messages: takeList(src.messages, 80),
+    draws: takeList(src.draws, 40),
+    letters: takeList(src.letters, 12),
+    daily: takeList(src.daily, 60),
+    events: takeList(src.events, 80),
+    gifts: takeList(src.gifts, 30),
+    memories: takeList(src.memories, 80),
+    pats: takeList(src.pats, 40),
+    cat: {
+      mood: Number.isFinite(mood) ? Math.min(100, Math.max(4, mood)) : base.cat.mood,
+      lastPat: typeof cat.lastPat === "number" ? cat.lastPat : 0,
+      lastCheckin: typeof cat.lastCheckin === "number" ? cat.lastCheckin : base.cat.lastCheckin,
+      decayAppliedOn: typeof cat.decayAppliedOn === "string" ? cat.decayAppliedOn : base.cat.decayAppliedOn,
+    },
+  });
+  const hasAnything =
+    room.members.length > 0 ||
+    room.questions.length > 0 ||
+    room.messages.length > 0 ||
+    room.notes.length > 0 ||
+    room.draws.length > 0 ||
+    room.letters.length > 0 ||
+    room.wishlist.length > 0 ||
+    room.memories.length > 0 ||
+    room.pats.length > 0;
+  return hasAnything ? room : null;
+}
+
+export async function restoreRoom(id: string, raw: unknown): Promise<Room> {
+  return withLock(async () => {
+    const incoming = sanitizeRoom(id, raw);
+    const current = applyDecay(await loadRoom(id));
+    if (!incoming) return cloneRoom(current);
+    const merged = mergeRooms(current, incoming);
+    merged.id = id;
+    await saveRoom(merged);
+    return cloneRoom(merged);
   });
 }
 
