@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: lazy-cat-den
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
