@@ -48,7 +48,7 @@ export function ComeCloser({ people }: { people: string[] }) {
   async function send(kind: string, event?: FormEvent) {
     event?.preventDefault();
     if (!partnerName) {
-      setLocalError("等对方走进小屋");
+      setLocalError("等有人走进小屋");
       return;
     }
     const spec = CLOSER_KINDS.find((item) => item.id === kind);
@@ -85,7 +85,7 @@ export function ComeCloser({ people }: { people: string[] }) {
               关闭
             </button>
           </div>
-          {!people.length ? <p className="mt-4 text-sm text-muted">等对方走进小屋，就能靠近一点。</p> : null}
+          {!people.length ? <p className="mt-4 text-sm text-muted">等有人走进小屋，就能靠近一点。</p> : null}
           {people.length > 1 ? (
             <div className="mt-4 flex flex-wrap gap-2">
               {people.map((name) => (

@@ -4,12 +4,15 @@ import { FormEvent, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ComeCloser } from "@/components/ComeCloser";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
+import { activityHref, publicActivity } from "@/lib/activity";
 import { CAT_FORMS } from "@/lib/constants";
 import { consoleState } from "@/lib/games";
 import {
+  cottageHeadline,
   feelingOf,
   momentText,
   othersOf,
+  peopleLine,
   presenceLabel,
   roomDecor,
   skyPhase,
@@ -43,6 +46,14 @@ export function CottageRoom() {
   const streak = togetherStreak(room.members, now);
   const base = `/room/${encodeURIComponent(roomId)}`;
   const banner = lines.length ? lines[moment % lines.length] : "";
+  const whoLine = peopleLine(room.members, displayName, now);
+  const headline = cottageHeadline(room.members, streak, now);
+  const feed = publicActivity(room, 4);
+  const firstVisit =
+    (me?.visitDays?.length ?? 1) <= 1 &&
+    !room.notes.some((item) => item.author === displayName) &&
+    !room.questions.some((item) => item.askedBy === displayName) &&
+    !room.messages.some((item) => item.author === displayName);
 
   async function copyInvite() {
     const url = `${window.location.origin}/?room=${encodeURIComponent(roomId)}`;
@@ -93,17 +104,15 @@ export function CottageRoom() {
           </div>
           <div className="order-1 flex flex-col items-center justify-center gap-3 py-6 text-center md:col-span-2 xl:col-span-1 xl:order-none xl:min-h-[16rem]">
             <p className="text-lg font-extrabold">懒猫小屋</p>
-            <p className="text-xs text-muted">
-              {streak > 0 ? `一起 ${streak} 天` : "你们的小房间"}
-              {room.members.length > 2 ? ` · ${room.members.length} 个人` : ""}
-            </p>
+            <p className="text-xs text-muted">{headline}</p>
+            <p className="max-w-xs text-xs leading-relaxed text-muted">{whoLine}</p>
             <ComeCloser people={others.map((member) => member.displayName)} />
             <p className="text-xs text-muted">
               猫在 <Link href={`${base}/cat`} className="font-bold text-rose">猫</Link> 那一页
             </p>
           </div>
           <div className="order-3 space-y-3">
-            <PartnerSpot member={beside ?? null} selfName={displayName} now={now} emptyLabel="还空着一个位置" />
+            <PartnerSpot member={beside ?? null} selfName={displayName} now={now} emptyLabel="还可以邀请别人" />
             {rightExtras.map((member) => (
               <PartnerSpot key={member.displayName} member={member} selfName={displayName} now={now} emptyLabel="" />
             ))}
@@ -128,7 +137,40 @@ export function CottageRoom() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-3xl space-y-3">
+      {firstVisit ? (
+        <section className="mx-auto max-w-3xl">
+          <p className="text-sm font-bold">先做一件小事</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <a href="#notes" className="rounded-full bg-blush px-4 py-2 text-sm font-bold text-rose-deep">
+              留一句话
+            </a>
+            <Link href={`${base}/qa`} className="rounded-full bg-blush px-4 py-2 text-sm font-bold text-rose-deep">
+              问或答
+            </Link>
+            <Link href={`${base}/games`} className="rounded-full bg-blush px-4 py-2 text-sm font-bold text-rose-deep">
+              一起玩
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      {feed.length ? (
+        <section className="mx-auto max-w-3xl">
+          <h2 className="font-bold">最近发生的</h2>
+          <ul className="mt-2 space-y-1">
+            {feed.map((item) => (
+              <li key={item.id}>
+                <Link href={activityHref(roomId, item)} className="flex items-center justify-between gap-3 rounded-2xl px-1 py-1 text-sm hover:bg-blush/40">
+                  <span>{item.titleZh}</span>
+                  <span className="shrink-0 text-[11px] text-muted">{formatTime(item.createdAt)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section id="notes" className="mx-auto max-w-3xl scroll-mt-20 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-bold">墙上的便签</h2>
           <button type="button" onClick={copyInvite} className="text-xs font-bold text-rose">
@@ -139,7 +181,7 @@ export function CottageRoom() {
           <input
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            placeholder="写一句给对方…"
+            placeholder="写一句贴在墙上…"
             aria-label="便签"
             className="min-w-0 flex-1 rounded-2xl border border-[var(--line)] bg-card px-4 py-3 text-ink outline-none"
           />

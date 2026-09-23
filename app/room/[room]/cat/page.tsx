@@ -45,7 +45,7 @@ export default function CatPage() {
     <div className="mx-auto max-w-xl space-y-5 text-center">
       <header>
         <h1 className="text-2xl font-extrabold">懒猫 The cat</h1>
-        <p className="text-sm text-muted">今天摸摸它，它就会记得你们来过</p>
+        <p className="text-sm text-muted">今天摸摸它，它就会记得有人来过</p>
       </header>
       <section className="card rounded-[28px] px-4 pb-6 pt-3">
         <CatMascot pose={pose} patted={patted || actPose === "playing"} onPat={pat} />

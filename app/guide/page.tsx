@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const STEPS = [
   { zh: "写下房间名", en: "Type the room name", detail: "yiyi-and-you" },
   { zh: "选你的名字", en: "Pick your name", detail: "嘉怡 或 宝宝" },
-  { zh: "进小屋", en: "Open the cottage", detail: "看看对方在不在" },
+  { zh: "进小屋", en: "Open the cottage", detail: "看看屋里有谁" },
 ];
 
 const PLAY = [

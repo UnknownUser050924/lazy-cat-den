@@ -15,7 +15,7 @@ const JARS = [
     id: "who",
     zh: "谁来决定",
     en: "Who decides",
-    hint: "两个人都在小屋里才能抽",
+    hint: "小屋里至少两个人才能抽",
     needsTwo: true,
   },
   {
@@ -62,7 +62,7 @@ export default function DrawPage() {
       </header>
       {members.length < 2 ? (
         <p className="rounded-[24px] bg-blush/70 px-4 py-3 text-sm text-rose-deep">
-          谁来决定，要等两个人都在。另外两个罐子现在就能抽。
+          谁来决定，要等再来一个人。另外两个罐子现在就能抽。
           {members.length ? ` 现在看到：${members.join("、")}` : ""}
         </p>
       ) : null}

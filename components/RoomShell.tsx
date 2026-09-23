@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { Sidebar } from "@/components/Sidebar";
+import { navHints } from "@/lib/activity";
 import { slugifyRoom } from "@/lib/constants";
 import { readSession, writeSession } from "@/lib/session";
 import { useRoom } from "@/lib/use-room";
@@ -65,6 +66,8 @@ export function RoomShell({
     );
   }
 
+  const hints = roomState.room ? navHints(roomState.room, name) : { qa: false, games: false, letter: false };
+
   return (
     <RoomContext.Provider
       value={{
@@ -74,7 +77,7 @@ export function RoomShell({
       }}
     >
       <div className="min-h-dvh md:grid md:grid-cols-[13.5rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)]">
-        <Sidebar room={roomId} />
+        <Sidebar room={roomId} hints={hints} />
         <div className="min-w-0">
           <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--cream)_88%,transparent)] px-4 py-3 text-ink backdrop-blur-md">
             <div>
@@ -109,7 +112,7 @@ export function RoomShell({
             </div>
           </header>
           <main className="mx-auto w-full max-w-lg px-4 pb-28 pt-4 md:max-w-none md:px-6 md:pb-10 xl:px-10">{children}</main>
-          <BottomNav room={roomId} />
+          <BottomNav room={roomId} hints={hints} />
         </div>
       </div>
     </RoomContext.Provider>

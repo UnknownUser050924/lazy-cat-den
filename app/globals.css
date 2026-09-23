@@ -269,6 +269,16 @@ html[data-sky="night"] .cottage-lamp {
   box-shadow: 0 0 0 3px rgba(195, 107, 118, 0.35);
 }
 
+.nav-dot {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.4rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--rose-deep);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .floaty,
   .wiggle,

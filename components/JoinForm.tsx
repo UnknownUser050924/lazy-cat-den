@@ -76,7 +76,7 @@ export function JoinForm({
       <div className="text-center">
         <p className="text-xs font-bold tracking-[0.28em] text-rose">LAZY CAT DEN</p>
         <h1 className="mt-2 text-4xl font-extrabold">懒猫小屋</h1>
-        <p className="mt-2 text-sm text-muted">同一间小屋 · everyone in the room stays together</p>
+        <p className="mt-2 text-sm text-muted">同一间小屋 · 谁进来都能待在一起</p>
         <p className="mt-2 text-xs">
           <a className="font-bold text-rose" href="/guide">
             怎么玩
@@ -114,7 +114,7 @@ export function JoinForm({
             name="displayName"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={fromInvite ? "Grok, ChatGPT, or your name" : "嘉怡 或 宝宝"}
+            placeholder={fromInvite ? "写下你自己的名字" : "嘉怡 或 宝宝"}
             className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-cream/60 px-4 py-3 outline-none focus:border-rose"
           />
         </label>
@@ -135,6 +135,9 @@ export function JoinForm({
           </div>
         )}
         {error ? <p className="text-sm text-rose-deep">{error}</p> : null}
+        <p className="text-xs leading-relaxed text-muted">
+          名字对上就会接着用这个人已经写过的角落和记录。想当新的人，就换一个名字。小屋里没有密码，知道房间名的人都能进。
+        </p>
         <button
           disabled={busy}
           className="soft-btn w-full rounded-full bg-rose-deep py-3 text-base font-bold text-white disabled:opacity-60"

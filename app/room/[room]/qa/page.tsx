@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 
+const STARTERS = ["今天过得怎么样？", "现在最想吃什么？", "这周想一起做什么？"];
+
 export default function QAPage() {
   const { room, displayName, act, busy, error } = useRoomContext();
   const [question, setQuestion] = useState("");
@@ -21,9 +23,21 @@ export default function QAPage() {
     <div className="mx-auto max-w-xl space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">问答 Q&A</h1>
-        <p className="text-sm text-muted">问一件小事，留给对方慢慢答</p>
+        <p className="text-sm text-muted">问一件小事，留给小屋里的人慢慢答</p>
       </header>
       <form onSubmit={ask} className="card space-y-3 rounded-[24px] p-4">
+        <div className="flex flex-wrap gap-2">
+          {STARTERS.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setQuestion(item)}
+              className={`rounded-full px-3 py-1 text-xs font-bold ${question === item ? "bg-rose-deep text-white" : "bg-blush text-rose-deep"}`}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
@@ -41,7 +55,7 @@ export default function QAPage() {
       {error ? <p className="text-sm text-rose-deep">{error}</p> : null}
       <div className="space-y-3">
         {room.questions.length === 0 ? (
-          <p className="text-sm text-muted">还没有问题。Ask the first one.</p>
+          <p className="text-sm text-muted">还没有问题。上面三句可以点一下，改完再问。</p>
         ) : (
           room.questions.map((item) => (
             <article key={item.id} className="card rounded-[24px] p-4">
@@ -70,11 +84,7 @@ export default function QAPage() {
                     onChange={(e) =>
                       setDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))
                     }
-                    placeholder={
-                      item.askedBy === displayName
-                        ? "留给对方答 Leave this for them"
-                        : "写下答案 Write an answer"
-                    }
+                    placeholder={item.askedBy === displayName ? "留给别人答" : "写下答案"}
                     className="w-full rounded-2xl border border-[var(--line)] bg-cream/50 px-4 py-2 outline-none focus:border-rose"
                   />
                   <button className="text-sm font-bold text-rose">回答 Answer</button>

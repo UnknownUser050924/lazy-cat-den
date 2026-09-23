@@ -71,7 +71,7 @@ export default function MemoriesPage() {
           <p className="mt-1 text-xs text-muted">{formatTime(featured.createdAt)}</p>
         </Link>
       ) : null}
-      {room.memories.length === 0 ? <p className="text-sm text-muted">故事会在你们使用小屋时自己长出来。</p> : null}
+      {room.memories.length === 0 ? <p className="text-sm text-muted">故事会在有人使用小屋时自己长出来。</p> : null}
       <ol className="grid gap-3 sm:grid-cols-2">
         {room.memories.map((memory) => (
           <li key={memory.id}>

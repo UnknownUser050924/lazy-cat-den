@@ -9,6 +9,8 @@ export function useRoom(roomId: string, displayName: string | null) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const revision = useRef(0);
+  const actSeq = useRef(0);
+  const inflight = useRef(0);
   const restoring = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -48,6 +50,8 @@ export function useRoom(roomId: string, displayName: string | null) {
   const act = useCallback(
     async (action: ClientAction) => {
       if (!displayName) throw new Error("Join the room first");
+      const mine = ++actSeq.current;
+      inflight.current += 1;
       setBusy(true);
       try {
         const res = await fetch(`/api/rooms/${encodeURIComponent(roomId)}`, {
@@ -59,17 +63,23 @@ export function useRoom(roomId: string, displayName: string | null) {
         if (!res.ok) throw new Error(data.error || "Something went wrong");
         revision.current += 1;
         const next = data as Room;
-        setRoom(next);
-        const kept = readBackup(roomId);
-        if (!kept || !backupHasMore(kept, next)) writeBackup(next);
-        setError(null);
+        if (actSeq.current === mine) {
+          setRoom(next);
+          const kept = readBackup(roomId);
+          if (!kept || !backupHasMore(kept, next)) writeBackup(next);
+          setError(null);
+        }
         return next;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Something went wrong";
-        setError(message);
+        if (actSeq.current === mine) setError(message);
         throw err;
       } finally {
-        setBusy(false);
+        inflight.current -= 1;
+        if (inflight.current <= 0) {
+          inflight.current = 0;
+          setBusy(false);
+        }
       }
     },
     [displayName, roomId],

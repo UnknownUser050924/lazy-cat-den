@@ -670,7 +670,7 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           });
         } else if (action.drawType === "who") {
           const names = [...new Set(room.members.map((m) => m.displayName))];
-          if (names.length < 2) throw new Error("Need two people in the room first");
+          if (names.length < 2) throw new Error("再等一个人进小屋吧");
           const task = WHO_DRAWS[Math.floor(Math.random() * WHO_DRAWS.length)];
           room.draws.unshift({
             id: uid(),
@@ -706,7 +706,7 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           let winner: string;
           if (spec.kind === "person") {
             const names = [...new Set(room.members.map((m) => m.displayName))];
-            if (names.length < 2) throw new Error("Need two people in the room first");
+            if (names.length < 2) throw new Error("再等一个人进小屋吧");
             winner = names[Math.floor(Math.random() * names.length)];
           } else {
             const pool = DRAW_JARS[spec.jar];

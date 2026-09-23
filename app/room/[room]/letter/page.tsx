@@ -21,7 +21,7 @@ export default function LetterPage() {
     <div className="mx-auto max-w-xl space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">给你的信</h1>
-        <p className="text-sm text-muted">一张只给对方看的小纸条</p>
+        <p className="text-sm text-muted">拆开前先藏着。小屋里谁拆开谁看。</p>
       </header>
       <form onSubmit={send} className="card space-y-3 rounded-[24px] p-4">
         <textarea

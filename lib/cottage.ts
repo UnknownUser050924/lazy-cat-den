@@ -17,15 +17,51 @@ export function isNight(now: number | Date = Date.now()) {
   return skyPhase(now) === "night";
 }
 
+const WEEK_MS = 7 * 24 * 60 * 1000;
+
 export function isHere(member: Member, now = Date.now()) {
   return now - member.lastSeen < ONLINE_MS;
 }
 
 export function presenceLabel(member: Member, selfName: string, now = Date.now()) {
   const today = dateKey(now);
-  if (member.displayName === selfName || isHere(member, now)) return "在线";
-  if ((member.visitDays ?? []).includes(today)) return "刚刚还在";
-  return "离开中";
+  if (member.displayName === selfName || isHere(member, now)) return "在这儿";
+  if ((member.visitDays ?? []).includes(today)) return "今天来过";
+  if (member.lastSeen > 0 && now - member.lastSeen < WEEK_MS) return "最近来过";
+  return "有一阵没来";
+}
+
+export function hereNow(members: Member[], selfName = "", now = Date.now()) {
+  return members.filter((member) => member.displayName === selfName || isHere(member, now));
+}
+
+export function visitedToday(members: Member[], selfName = "", now = Date.now()) {
+  const today = dateKey(now);
+  const present = new Set(hereNow(members, selfName, now).map((member) => member.displayName));
+  return members.filter((member) => !present.has(member.displayName) && (member.visitDays ?? []).includes(today));
+}
+
+export function peopleLine(members: Member[], selfName = "", now = Date.now()) {
+  const here = hereNow(members, selfName, now);
+  const today = visitedToday(members, selfName, now);
+  const parts: string[] = [];
+  if (here.length) parts.push(`在这儿 ${here.map((member) => member.displayName).join("、")}`);
+  if (today.length) parts.push(`今天来过 ${today.map((member) => member.displayName).join("、")}`);
+  if (!parts.length) {
+    if (members.length <= 1) return "这间小屋还可以邀请别人";
+    return `${members.length} 个人的小屋`;
+  }
+  return parts.join(" · ");
+}
+
+export function cottageHeadline(members: Member[], streak: number, now = Date.now()) {
+  const here = members.filter((member) => isHere(member, now));
+  if (here.length >= 3) return `现在 ${here.length} 个人在这儿`;
+  if (here.length === 2) return `${here[0].displayName}和${here[1].displayName}在这儿`;
+  if (members.length <= 1) return "还是一个人的小屋";
+  if (streak > 0) return `一起 ${streak} 天`;
+  if (members.length === 2) return "两个人的小屋";
+  return `${members.length} 个人的小屋`;
 }
 
 export function feelingOf(statusId: string | null) {
@@ -38,8 +74,9 @@ export function feelingOf(statusId: string | null) {
 }
 
 export function togetherStreak(members: Member[], now = Date.now()) {
-  if (members.length < 2) return 0;
-  const sets = members.map((member) => new Set(member.visitDays ?? []));
+  const group = members.filter((member) => now - member.lastSeen < WEEK_MS);
+  if (group.length < 2) return 0;
+  const sets = group.map((member) => new Set(member.visitDays ?? []));
   let key = dateKey(now);
   let streak = 0;
   for (let i = 0; i < 366; i += 1) {
@@ -108,11 +145,20 @@ export function catSpeech(room: Room, sky: Sky, viewer = "", now = Date.now()) {
   }
   const unread = room.letters.find((letter) => !letter.openedAt && letter.from !== viewer);
   if (unread) return { zh: "有一封信在等你…", en: "A letter is waiting." };
-  if (online.length >= 2) return { zh: "两个人都回来啦！", en: "You're both home." };
+  if (online.length >= 3) {
+    const names = online.map((member) => member.displayName).join("、");
+    return { zh: `${names}都在这儿`, en: "The cottage is busy." };
+  }
+  if (online.length === 2) {
+    return {
+      zh: `${online[0].displayName}和${online[1].displayName}都在这儿`,
+      en: "Two people are here.",
+    };
+  }
   if (online.length === 1) {
     return { zh: `呀！${online[0].displayName}来了 ♡`, en: `${online[0].displayName} is here.` };
   }
-  if (sky === "night") return { zh: "你们还不睡吗…", en: "Still awake?" };
+  if (sky === "night") return { zh: "小屋里好安静…还不睡吗？", en: "Still awake?" };
   return { zh: "今天的小屋好安静…", en: "The cottage is quiet today." };
 }
 
@@ -126,10 +172,8 @@ export function tinyMoments(room: Room, viewer: string, now = Date.now()) {
   const done = room.wishlist.filter((wish) => wish.done).length;
   if (done > 0) lines.push(`你们完成了 ${done} 个愿望`);
   const visited = room.members.filter((member) => (member.visitDays ?? []).includes(today));
-  if (visited.length >= 2) lines.push("今天两个人都来过");
-  if (room.letters.some((letter) => !letter.openedAt && letter.from !== viewer)) {
-    lines.push("有一封信在等你…");
-  }
+  if (visited.length >= 3) lines.push(`今天 ${visited.length} 个人都来过`);
+  else if (visited.length === 2) lines.push(`今天 ${visited[0].displayName}和${visited[1].displayName}都来过`);
   return lines.slice(0, 2);
 }
 
