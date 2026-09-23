@@ -153,6 +153,7 @@ export type GameRecent = {
 export type GameDesk = {
   active: RpsSession | null;
   recent: GameRecent[];
+  stamp?: number;
 };
 
 export type Room = {
@@ -205,7 +206,8 @@ export type RoomAction =
   | { type: "setKnowMe"; displayName: string; promptId: string; answer: string }
   | { type: "guessKnowMe"; displayName: string; target: string; promptId: string; guess: string }
   | { type: "gift"; displayName: string; target: string; kind: string; note?: string }
-  | { type: "startRps"; displayName: string; target?: string }
+  | { type: "startRps"; displayName: string }
+  | { type: "joinRps"; displayName: string }
   | { type: "lockRps"; displayName: string; pick: RpsPick }
   | { type: "nextRps"; displayName: string }
   | { type: "clearRps"; displayName: string };

@@ -31,9 +31,11 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Invalid room" }, { status: 400 });
   }
   try {
-    const body = (await req.json()) as { type?: string; room?: unknown };
+    const body = (await req.json()) as { type?: string; displayName?: string; room?: unknown };
     const session = sessionFromRequest(req);
-    const viewer = session?.room === id ? session.displayName : "";
+    const viewer =
+      (typeof body.displayName === "string" && body.displayName) ||
+      (session?.room === id ? session.displayName : "");
     if (body.type === "restore") {
       const data = await restoreRoom(id, body.room);
       return NextResponse.json(presentRoom(data, viewer));

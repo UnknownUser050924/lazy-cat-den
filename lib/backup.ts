@@ -1,3 +1,4 @@
+import { mergeGames } from "./games";
 import type { Member, Room } from "./types";
 
 const PREFIX = "lazy-cat-den-room:";
@@ -18,7 +19,9 @@ export function readBackup(roomId: string): Room | null {
 export function writeBackup(room: Room) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(PREFIX + room.id, JSON.stringify(room));
+    const prev = readBackup(room.id);
+    const next = prev ? { ...room, games: mergeGames(prev.games, room.games) } : room;
+    localStorage.setItem(PREFIX + room.id, JSON.stringify(next));
   } catch {
     // The phone can refuse a huge backup. The server copy still exists.
   }
@@ -96,8 +99,23 @@ export function backupHasMore(local: Room, server: Room) {
   if ((local.members ?? []).some((member) => !(server.members ?? []).some((item) => item.displayName === member.displayName))) {
     return true;
   }
-  if (local.games?.active && (!server.games?.active || (local.games.active.updatedAt ?? 0) > (server.games.active.updatedAt ?? 0))) {
-    return true;
+  if (local.games?.active) {
+    const localStamp = local.games.stamp ?? 0;
+    const serverStamp = server.games?.stamp ?? 0;
+    if (localStamp > serverStamp) return true;
+    const remote = server.games?.active;
+    if (localStamp === serverStamp && remote && local.games.active.id === remote.id) {
+      const hidden = remote.status === "picking";
+      if (
+        Object.entries(local.games.active.picks ?? {}).some(([name, pick]) => {
+          if (!pick) return false;
+          if (hidden && remote.locked.includes(name)) return false;
+          return !remote.picks?.[name];
+        })
+      ) {
+        return true;
+      }
+    }
   }
   if (idsMissing(local.games?.recent, server.games?.recent)) return true;
   return false;

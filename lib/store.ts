@@ -12,6 +12,7 @@ import {
   GIFT_KINDS,
   KNOW_PROMPTS,
   NOTE_COLORS,
+  ONLINE_MS,
   PLAN_DRAWS,
   POCKET_KEYS,
   SWEET_DRAWS,
@@ -21,7 +22,7 @@ import {
   WHO_DRAWS,
 } from "./constants";
 import { promptForDate } from "./cottage";
-import { emptyGames, mergeGames, rpsBeats, sanitizeGames } from "./games";
+import { emptyGames, mergeGames, rpsRoundWinners, sanitizeGames } from "./games";
 import { dateKey, daysBetweenKeys } from "./time";
 import { emptyProfile } from "./profile";
 import type { Member, Memory, Profile, Room, RoomAction } from "./types";
@@ -998,22 +999,27 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
       }
       case "startRps": {
         touchMember(room, name);
-        const wanted = action.target?.trim();
-        const partner = wanted
-          ? room.members.find((member) => member.displayName === wanted)
-          : room.members
-              .filter((member) => member.displayName !== name)
-              .sort((a, b) => b.lastSeen - a.lastSeen)[0];
-        if (!partner || partner.displayName === name) throw new Error("等另一个人来再玩");
-        if (room.games.active && room.games.active.status !== "done") throw new Error("已经有一局了");
+        const players = [
+          ...new Set(
+            room.members
+              .filter((member) => now - member.lastSeen < ONLINE_MS)
+              .map((member) => member.displayName),
+          ),
+        ];
+        if (!players.includes(name)) players.unshift(name);
+        if (room.games.active?.status === "done") room.games.active = null;
+        if (room.games.active) throw new Error("已经有一局了");
+        const scores: Record<string, number> = {};
+        for (const player of players) scores[player] = 0;
+        room.games.stamp = now;
         room.games.active = {
           id: uid(),
           gameType: "rps",
           status: "picking",
-          players: [name, partner.displayName],
+          players,
           picks: {},
           locked: [],
-          scores: { [name]: 0, [partner.displayName]: 0 },
+          scores,
           round: 1,
           createdAt: now,
           updatedAt: now,
@@ -1021,31 +1027,50 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         };
         break;
       }
+      case "joinRps": {
+        touchMember(room, name);
+        const game = room.games.active;
+        if (!game || game.status === "done") throw new Error("这局还没开始");
+        if (!game.players.includes(name)) {
+          game.players = [...game.players, name];
+          game.scores[name] = 0;
+          game.updatedAt = now;
+          game.lastActionBy = name;
+        }
+        break;
+      }
       case "lockRps": {
         const game = room.games.active;
         if (!game || game.status !== "picking") throw new Error("这局还没开始");
-        if (!game.players.includes(name)) throw new Error("这局不是你的");
+        if (!game.players.includes(name)) {
+          game.players = [...game.players, name];
+          game.scores[name] = 0;
+        }
         if (game.locked.includes(name)) throw new Error("已经选好了");
         const pick = action.pick;
         if (pick !== "rock" && pick !== "scissors" && pick !== "paper") throw new Error("选一个");
         game.picks[name] = pick;
-        game.locked = [...game.locked, name];
+        game.locked = [...new Set([...game.locked, name])];
         game.updatedAt = now;
         game.lastActionBy = name;
-        if (game.players.every((player) => game.locked.includes(player))) {
-          const [first, second] = game.players;
-          const left = game.picks[first];
-          const right = game.picks[second];
-          if (left && right && rpsBeats(left, right)) game.scores[first] = (game.scores[first] ?? 0) + 1;
-          else if (left && right && rpsBeats(right, left)) game.scores[second] = (game.scores[second] ?? 0) + 1;
-          const finished = game.players.some((player) => (game.scores[player] ?? 0) >= 2);
+        const ready =
+          game.players.length >= 2 &&
+          game.players.every((player) => game.locked.includes(player) && game.picks[player]);
+        if (ready) {
+          for (const winner of rpsRoundWinners(game.picks)) {
+            game.scores[winner] = (game.scores[winner] ?? 0) + 1;
+          }
+          const top = Math.max(0, ...game.players.map((player) => game.scores[player] ?? 0));
+          const leaders = game.players.filter((player) => (game.scores[player] ?? 0) === top);
+          const finished = top >= 2 && leaders.length === 1;
           game.status = finished ? "done" : "reveal";
+          room.games.stamp = now;
           if (finished) {
-            game.winner = game.players.find((player) => (game.scores[player] ?? 0) >= 2);
+            game.winner = leaders[0];
             room.games.recent.unshift({
               id: game.id,
               gameType: "rps",
-              titleZh: `${game.winner ?? "我们"}赢了石头剪刀布`,
+              titleZh: `${game.winner}赢了石头剪刀布`,
               at: now,
             });
             room.games.recent = room.games.recent.slice(0, 12);
@@ -1063,17 +1088,20 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
       case "nextRps": {
         const game = room.games.active;
         if (!game || game.status !== "reveal") throw new Error("这回合还没揭晓");
-        if (!game.players.includes(name)) throw new Error("这局不是你的");
+        if (!room.members.some((member) => member.displayName === name)) throw new Error("先走进小屋");
         game.picks = {};
         game.locked = [];
         game.round += 1;
         game.status = "picking";
         game.updatedAt = now;
         game.lastActionBy = name;
+        room.games.stamp = now;
         break;
       }
       case "clearRps": {
-        if (room.games.active && !room.games.active.players.includes(name)) throw new Error("这局不是你的");
+        if (!room.games.active) break;
+        if (!room.members.some((member) => member.displayName === name)) throw new Error("先走进小屋");
+        room.games.stamp = now;
         room.games.active = null;
         break;
       }

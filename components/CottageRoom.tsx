@@ -1,17 +1,12 @@
 "use client";
 
 import { FormEvent, useState, type ReactNode } from "react";
-import type { CatPose } from "@/lib/cottage";
 import Link from "next/link";
-import { CatMascot, moodLabel } from "@/components/CatMascot";
 import { ComeCloser } from "@/components/ComeCloser";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 import { CAT_FORMS } from "@/lib/constants";
 import { consoleState } from "@/lib/games";
 import {
-  catPose,
-  catSpeech,
-  catSpot,
   feelingOf,
   momentText,
   othersOf,
@@ -29,9 +24,6 @@ export function CottageRoom() {
   const { room, roomId, displayName, act, error } = useRoomContext();
   const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
-  const [patted, setPatted] = useState(false);
-  const [actPose, setActPose] = useState<CatPose | null>(null);
-  const [actLine, setActLine] = useState("");
   const [moment, setMoment] = useState(0);
   const now = useNow();
   const sky = skyPhase(now);
@@ -45,8 +37,6 @@ export function CottageRoom() {
   const [beside, ...extras] = others;
   const leftExtras = extras.filter((_, index) => index % 2 === 0);
   const rightExtras = extras.filter((_, index) => index % 2 === 1);
-  const speech = catSpeech(room, sky, displayName, now);
-  const spot = catSpot(room, sky, now);
   const decor = roomDecor(room);
   const gameState = consoleState(room, displayName);
   const lines = tinyMoments(room, displayName, now);
@@ -66,26 +56,6 @@ export function CottageRoom() {
     if (!note.trim()) return;
     await act({ type: "addNote", text: note });
     setNote("");
-  }
-
-  async function pat() {
-    setPatted(true);
-    await act({ type: "pat" });
-    setTimeout(() => setPatted(false), 700);
-  }
-
-  async function play(kind: "playToy" | "feedCat") {
-    setActPose(kind === "playToy" ? "playing" : "eating");
-    setActLine(kind === "playToy" ? "抓到了！" : "吃饱啦 ♡");
-    try {
-      await act({ type: kind });
-    } catch (err) {
-      setActLine(err instanceof Error ? err.message : "等一下");
-    }
-    setTimeout(() => {
-      setActPose(null);
-      setActLine("");
-    }, 2400);
   }
 
   return (
@@ -121,28 +91,16 @@ export function CottageRoom() {
               <PartnerSpot key={member.displayName} member={member} selfName={displayName} now={now} emptyLabel="" />
             ))}
           </div>
-          <div className="order-1 text-center md:col-span-2 xl:col-span-1 xl:order-none">
-            <div className={`cat-spot-${spot}`}>
-              <CatMascot pose={actPose ?? catPose(room, sky, now)} size={200} patted={patted || actPose === "playing"} onPat={pat} />
-            </div>
-            <p className="text-lg font-extrabold">{actLine || speech.zh}</p>
-            <p className="text-xs text-muted">{actLine ? "" : speech.en}</p>
-            <p className="mt-1 text-xs text-muted">
-              {moodLabel(room.cat.mood).zh}
-              {streak > 0 ? ` · 一起 ${streak} 天` : ""}
+          <div className="order-1 flex flex-col items-center justify-center gap-3 py-6 text-center md:col-span-2 xl:col-span-1 xl:order-none xl:min-h-[16rem]">
+            <p className="text-lg font-extrabold">懒猫小屋</p>
+            <p className="text-xs text-muted">
+              {streak > 0 ? `一起 ${streak} 天` : "你们的小房间"}
               {room.members.length > 2 ? ` · ${room.members.length} 个人` : ""}
             </p>
-            <div className="mt-2 flex justify-center gap-2">
-              <button type="button" onClick={() => play("playToy")} className="rounded-full bg-blush px-3 py-1 text-xs font-bold text-rose-deep">
-                玩具
-              </button>
-              <button type="button" onClick={() => play("feedCat")} className="rounded-full bg-blush px-3 py-1 text-xs font-bold text-rose-deep">
-                喂猫
-              </button>
-            </div>
-            <div className="mt-3">
-              <ComeCloser people={others.map((member) => member.displayName)} />
-            </div>
+            <ComeCloser people={others.map((member) => member.displayName)} />
+            <p className="text-xs text-muted">
+              猫在 <Link href={`${base}/cat`} className="font-bold text-rose">猫</Link> 那一页
+            </p>
           </div>
           <div className="order-3 space-y-3">
             <PartnerSpot member={beside ?? null} selfName={displayName} now={now} emptyLabel="还空着一个位置" />
