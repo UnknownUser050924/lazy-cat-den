@@ -279,6 +279,25 @@ html[data-sky="night"] .cottage-lamp {
   background: var(--rose-deep);
 }
 
+dialog.sheet {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(24rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  max-height: min(80dvh, 36rem);
+  padding: 0;
+  border: none;
+  background: transparent;
+  overflow: hidden;
+  color: inherit;
+  z-index: 80;
+}
+
+dialog.sheet::backdrop {
+  background: rgba(74, 59, 54, 0.38);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .floaty,
   .wiggle,

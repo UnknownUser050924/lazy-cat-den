@@ -29,17 +29,23 @@ export function rpsRoundWinners(picks: Partial<Record<string, RpsPick>>) {
 }
 
 export function presentRoom(room: Room, viewer: string): Room {
-  const active = room.games?.active;
-  if (!active || active.status !== "picking") return room;
+  const members = room.members.map((member) => {
+    if (!("claimHash" in member) || !member.claimHash) return member;
+    const { claimHash: _omit, ...rest } = member;
+    return rest;
+  });
+  const next = { ...room, members };
+  const active = next.games?.active;
+  if (!active || active.status !== "picking") return next;
   const picks: RpsSession["picks"] = {};
   const mine = viewer ? active.picks[viewer] : undefined;
   if (mine) picks[viewer] = mine;
   return {
-    ...room,
+    ...next,
     games: {
       active: { ...active, picks },
-      recent: room.games.recent ?? [],
-      stamp: room.games.stamp ?? 0,
+      recent: next.games.recent ?? [],
+      stamp: next.games.stamp ?? 0,
     },
   };
 }

@@ -5,9 +5,16 @@ export const dynamic = "force-dynamic";
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ room?: string; joined?: string }>;
+  searchParams: Promise<{ room?: string; joined?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const invitedRoom = params.room?.trim() ?? "";
-  return <JoinForm initialRoom={invitedRoom} invited={Boolean(invitedRoom)} joined={params.joined ?? ""} />;
+  return (
+    <JoinForm
+      initialRoom={invitedRoom}
+      invited={Boolean(invitedRoom)}
+      joined={params.joined ?? ""}
+      initialError={params.error ?? ""}
+    />
+  );
 }

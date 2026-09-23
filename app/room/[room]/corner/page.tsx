@@ -12,6 +12,11 @@ type Saver = () => Promise<boolean>;
 export default function CornerPage() {
   const { room, displayName, act, error } = useRoomContext();
   const [who, setWho] = useState(displayName);
+
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("who")?.trim();
+    if (wanted) setWho(wanted);
+  }, []);
   const [editing, setEditing] = useState(false);
   const [closing, setClosing] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);

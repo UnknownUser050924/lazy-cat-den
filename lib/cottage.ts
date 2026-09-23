@@ -187,8 +187,29 @@ export function roomDecor(room: Room) {
   };
 }
 
-export function closerLine(kind: string, note?: string) {
-  const spec = GIFT_KINDS.find((item) => item.id === kind);
+export function closerSentLine(kind: string, target: string, note?: string) {
+  if (kind === "hug") return `你抱了${target}一下`;
+  if (kind === "kiss") return `你亲了${target}一下`;
+  if (kind === "hand") return `你牵了${target}的手`;
+  if (kind === "cuddle") return `你贴了贴${target}`;
+  if (kind === "flower") return `你送了${target}一朵花`;
+  if (kind === "cookie") return `你给了${target}一块饼干`;
+  if (kind === "note") return note?.trim() ? `你对${target}留了句话` : `你对${target}留了句话`;
+  return `你靠近了${target}一下`;
+}
+
+export function closerReceivedLine(kind: string, from: string, note?: string) {
+  if (kind === "hug") return `${from}抱了你一下`;
+  if (kind === "kiss") return `${from}亲了你一下`;
+  if (kind === "hand") return `${from}牵了你的手`;
+  if (kind === "cuddle") return `${from}贴了贴你`;
+  if (kind === "flower") return `${from}送了你一朵花`;
+  if (kind === "cookie") return `${from}给了你一块饼干`;
+  if (kind === "note") return note?.trim() ? `${from}对你说：${note.trim()}` : `${from}给你留了句话`;
+  return `${from}靠近了你一下`;
+}
+
+export function closerLine(kind: string, note?: string, target = "你") {
   if (kind === "note" && note?.trim()) return `留了句话：${note.trim()}`;
-  return spec?.line ?? "靠近了你一下";
+  return closerSentLine(kind, target, note).replace(/^你/, "");
 }

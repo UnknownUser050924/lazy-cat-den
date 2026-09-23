@@ -3,12 +3,14 @@ import { SESSION_KEY } from "./constants";
 export type Session = {
   room: string;
   displayName: string;
+  claim?: string;
 };
 
 const COOKIE = "lcd-session";
 
 function pack(session: Session) {
-  return `${session.room}|${encodeURIComponent(session.displayName)}`;
+  const base = `${encodeURIComponent(session.room)}|${encodeURIComponent(session.displayName)}`;
+  return session.claim ? `${base}|${encodeURIComponent(session.claim)}` : base;
 }
 
 function unpack(raw: string): Session | null {
@@ -16,9 +18,14 @@ function unpack(raw: string): Session | null {
   if (split <= 0) return null;
   try {
     const room = decodeURIComponent(raw.slice(0, split));
-    const displayName = decodeURIComponent(raw.slice(split + 1));
+    const rest = raw.slice(split + 1);
+    const claimAt = rest.lastIndexOf("|");
+    const namePart = claimAt >= 0 ? rest.slice(0, claimAt) : rest;
+    const claimRaw = claimAt >= 0 ? rest.slice(claimAt + 1) : undefined;
+    const displayName = decodeURIComponent(namePart);
+    const claim = claimRaw ? decodeURIComponent(claimRaw) : undefined;
     if (!room || !displayName) return null;
-    return { room, displayName };
+    return { room, displayName, claim };
   } catch {
     return null;
   }
@@ -37,7 +44,13 @@ export function readSession(): Session | null {
     const raw = localStorage.getItem(SESSION_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Session;
-      if (parsed.room && parsed.displayName) return parsed;
+      if (parsed.room && parsed.displayName) {
+        const cookie = readCookie();
+        if (cookie?.claim && cookie.room === parsed.room && cookie.displayName === parsed.displayName) {
+          return { ...parsed, claim: parsed.claim || cookie.claim };
+        }
+        return parsed;
+      }
     }
   } catch {
     // Fall through to the cookie.
@@ -50,8 +63,13 @@ export function readSession(): Session | null {
 }
 
 export function writeSession(session: Session) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  document.cookie = `${COOKIE}=${pack(session)}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  const cookie = typeof document !== "undefined" ? readCookie() : null;
+  const claim =
+    session.claim ||
+    (cookie?.room === session.room && cookie.displayName === session.displayName ? cookie.claim : undefined);
+  const next = { ...session, claim };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+  document.cookie = `${COOKIE}=${pack(next)}; Path=/; Max-Age=31536000; SameSite=Lax`;
 }
 
 export function clearSession() {

@@ -10,16 +10,18 @@ export function JoinForm({
   initialRoom = "",
   invited = false,
   joined = "",
+  initialError = "",
 }: {
   initialRoom?: string;
   invited?: boolean;
   joined?: string;
+  initialError?: string;
 }) {
   const router = useRouter();
   const [room, setRoom] = useState(initialRoom || DEFAULT_ROOM);
   const [fromInvite, setFromInvite] = useState(invited);
   const [name, setName] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -63,7 +65,8 @@ export function JoinForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not join");
-      writeSession({ room: roomId, displayName });
+      const headerClaim = res.headers.get("X-LCD-Claim") ?? undefined;
+      writeSession({ room: roomId, displayName, claim: headerClaim });
       router.push(`/room/${encodeURIComponent(roomId)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not join");
@@ -136,7 +139,7 @@ export function JoinForm({
         )}
         {error ? <p className="text-sm text-rose-deep">{error}</p> : null}
         <p className="text-xs leading-relaxed text-muted">
-          名字对上就会接着用这个人已经写过的角落和记录。想当新的人，就换一个名字。小屋里没有密码，知道房间名的人都能进。
+          这台手机进过小屋之后，会认领这个名字。别人不能再用你的名字改你的角落。换一台设备或清掉记录后，已经认领的名字就不能再领，请换一个新名字。知道房间名就能进小屋；进来的人都能看到便签、信和角落，小屋没有密码。
         </p>
         <button
           disabled={busy}

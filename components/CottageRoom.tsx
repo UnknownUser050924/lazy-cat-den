@@ -158,14 +158,26 @@ export function CottageRoom() {
         <section className="mx-auto max-w-3xl">
           <h2 className="font-bold">最近发生的</h2>
           <ul className="mt-2 space-y-1">
-            {feed.map((item) => (
-              <li key={item.id}>
-                <Link href={activityHref(roomId, item)} className="flex items-center justify-between gap-3 rounded-2xl px-1 py-1 text-sm hover:bg-blush/40">
+            {feed.map((item) => {
+              const href = activityHref(roomId, item);
+              const inner = (
+                <>
                   <span>{item.titleZh}</span>
                   <span className="shrink-0 text-[11px] text-muted">{formatTime(item.createdAt)}</span>
-                </Link>
-              </li>
-            ))}
+                </>
+              );
+              return (
+                <li key={item.id}>
+                  {href ? (
+                    <Link href={href} className="flex items-center justify-between gap-3 rounded-2xl px-1 py-1 text-sm hover:bg-blush/40">
+                      {inner}
+                    </Link>
+                  ) : (
+                    <p className="flex items-center justify-between gap-3 rounded-2xl px-1 py-1 text-sm">{inner}</p>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

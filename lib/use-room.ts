@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { backupHasMore, readBackup, writeBackup } from "./backup";
+import { readSession, writeSession } from "./session";
 import type { ClientAction, Room } from "./types";
 
 export function useRoom(roomId: string, displayName: string | null) {
@@ -13,12 +14,28 @@ export function useRoom(roomId: string, displayName: string | null) {
   const inflight = useRef(0);
   const restoring = useRef(false);
 
+  const persistClaim = useCallback(
+    (res: Response) => {
+      const headerClaim = res.headers.get("X-LCD-Claim");
+      if (!headerClaim || !displayName) return;
+      const session = readSession();
+      if (session?.room === roomId && session.displayName === displayName) {
+        writeSession({ ...session, claim: headerClaim });
+      }
+    },
+    [displayName, roomId],
+  );
+
   const refresh = useCallback(async () => {
     const seen = revision.current;
     const res = await fetch(`/api/rooms/${encodeURIComponent(roomId)}`, {
       cache: "no-store",
     });
-    if (!res.ok) throw new Error("Could not load room");
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(payload?.error || "Could not load room");
+    }
+    persistClaim(res);
     let data = (await res.json()) as Room;
     const backup = readBackup(roomId);
     if (backup && !restoring.current && backupHasMore(backup, data)) {
@@ -45,7 +62,7 @@ export function useRoom(roomId: string, displayName: string | null) {
       setError(null);
     }
     return data;
-  }, [displayName, roomId]);
+  }, [displayName, persistClaim, roomId]);
 
   const act = useCallback(
     async (action: ClientAction) => {
@@ -61,6 +78,7 @@ export function useRoom(roomId: string, displayName: string | null) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Something went wrong");
+        persistClaim(res);
         revision.current += 1;
         const next = data as Room;
         if (actSeq.current === mine) {
@@ -82,7 +100,7 @@ export function useRoom(roomId: string, displayName: string | null) {
         }
       }
     },
-    [displayName, roomId],
+    [displayName, persistClaim, roomId],
   );
 
   useEffect(() => {

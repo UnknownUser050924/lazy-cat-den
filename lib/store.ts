@@ -21,11 +21,17 @@ import {
   WALLS,
   WHO_DRAWS,
 } from "./constants";
+import { claimMatches, hashClaim, newClaim } from "./claim";
 import { promptForDate } from "./cottage";
 import { emptyGames, mergeGames, rpsRoundWinners, sanitizeGames } from "./games";
 import { dateKey, daysBetweenKeys } from "./time";
 import { emptyProfile } from "./profile";
 import type { Member, Memory, Profile, Room, RoomAction } from "./types";
+
+export type MemberAuth = { displayName?: string; claim?: string };
+
+const NAME_TAKEN = "这个名字已经有人在用。换一个名字，或用原来进过小屋的手机打开。";
+const NEED_SESSION = "先走进小屋";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "rooms.json");
@@ -167,6 +173,7 @@ function mergeMembers(a: Member[], b: Member[]): Member[] {
       ...newer,
       visitDays: [...new Set([...prev.visitDays, ...member.visitDays])],
       profile: mergeProfile(newer.profile, older.profile, true),
+      ...(prev.claimHash || member.claimHash ? { claimHash: prev.claimHash || member.claimHash } : {}),
     });
   }
   return [...map.values()].sort((x, y) => x.displayName.localeCompare(y.displayName, "zh"));
@@ -185,6 +192,7 @@ function normalizeMember(member: Partial<Member> & { displayName: string }): Mem
     statusId: member.statusId ?? null,
     visitDays: member.visitDays ?? [],
     profile,
+    ...(member.claimHash ? { claimHash: member.claimHash } : {}),
   };
 }
 
@@ -389,6 +397,51 @@ function memberOf(room: Room, displayName: string) {
   return member;
 }
 
+function returningClaim(name: string, auth?: MemberAuth) {
+  return auth?.displayName === name ? auth.claim : undefined;
+}
+
+function admitMember(room: Room, name: string, auth?: MemberAuth) {
+  const now = Date.now();
+  const firstToday = todayKey(room.cat.lastCheckin) !== todayKey(now);
+  const existing = room.members.find((item) => item.displayName === name);
+  const presented = returningClaim(name, auth);
+
+  if (existing?.claimHash) {
+    if (!claimMatches(existing.claimHash, presented)) throw new Error(NAME_TAKEN);
+    touchMember(room, name);
+    room.cat.lastCheckin = now;
+    bumpMood(room, firstToday ? 8 : 2);
+    return presented as string;
+  }
+
+  const claim = presented || newClaim();
+  if (existing) {
+    existing.claimHash = hashClaim(claim);
+    touchMember(room, name);
+  } else {
+    touchMember(room, name);
+    const member = room.members.find((item) => item.displayName === name);
+    if (!member) throw new Error("Member missing");
+    member.claimHash = hashClaim(claim);
+  }
+  room.cat.lastCheckin = now;
+  bumpMood(room, firstToday ? 8 : 2);
+  return claim;
+}
+
+function requireActor(room: Room, name: string, claim?: string) {
+  const member = room.members.find((item) => item.displayName === name);
+  if (!member) throw new Error(NEED_SESSION);
+  if (member.claimHash) {
+    if (!claimMatches(member.claimHash, claim)) throw new Error("这不是你的名字");
+    return undefined;
+  }
+  const next = claim || newClaim();
+  member.claimHash = hashClaim(next);
+  return next;
+}
+
 async function readDisk(): Promise<Record<string, Room>> {
   try {
     const raw = await fs.readFile(DATA_FILE, "utf8");
@@ -424,13 +477,31 @@ async function saveRoom(room: Room) {
   await writeDisk(disk);
 }
 
-export async function notePresence(id: string, displayName: string): Promise<Room> {
+export async function notePresence(
+  id: string,
+  displayName: string,
+  claim?: string,
+): Promise<{ room: Room; claim?: string }> {
   return withLock(async () => {
     const name = cleanName(displayName);
     const room = applyDecay(await loadRoom(id));
+    const existing = room.members.find((item) => item.displayName === name);
+    if (!existing) {
+      return { room: cloneRoom(room) };
+    }
+    if (existing.claimHash) {
+      if (!claimMatches(existing.claimHash, claim)) {
+        return { room: cloneRoom(room) };
+      }
+      touchMember(room, name);
+      await saveRoom(room);
+      return { room: cloneRoom(room), claim };
+    }
+    const nextClaim = claim || newClaim();
+    existing.claimHash = hashClaim(nextClaim);
     touchMember(room, name);
     await saveRoom(room);
-    return cloneRoom(room);
+    return { room: cloneRoom(room), claim: nextClaim };
   });
 }
 
@@ -458,7 +529,11 @@ function sanitizeRoom(id: string, raw: unknown): Room | null {
     ...base,
     id,
     createdAt: typeof src.createdAt === "number" ? src.createdAt : base.createdAt,
-    members: takeList(src.members, 24),
+    members: takeList<Member>(src.members, 24).map((member) => {
+      const copy = { ...member };
+      delete copy.claimHash;
+      return copy;
+    }),
     questions: takeList(src.questions, 80),
     wishlist: takeList(src.wishlist, 80),
     notes: takeList(src.notes, 24),
@@ -505,21 +580,29 @@ export async function restoreRoom(id: string, raw: unknown): Promise<Room> {
   });
 }
 
-export async function applyAction(id: string, action: RoomAction): Promise<Room> {
+export async function applyAction(
+  id: string,
+  action: RoomAction,
+  auth?: MemberAuth,
+): Promise<{ room: Room; claim?: string }> {
   return withLock(async () => {
     const room = applyDecay(await loadRoom(id));
     const now = Date.now();
-    const name = cleanName(action.displayName ?? "");
+    let issuedClaim: string | undefined;
+    let name: string;
+
+    if (action.type === "join" || action.type === "checkin") {
+      name = cleanName(action.displayName ?? auth?.displayName ?? "");
+      issuedClaim = admitMember(room, name, auth);
+      await saveRoom(room);
+      return { room: cloneRoom(room), claim: issuedClaim };
+    }
+
+    if (!auth?.displayName) throw new Error(NEED_SESSION);
+    name = cleanName(auth.displayName);
+    issuedClaim = requireActor(room, name, auth.claim);
 
     switch (action.type) {
-      case "join":
-      case "checkin": {
-        const firstToday = todayKey(room.cat.lastCheckin) !== todayKey(now);
-        touchMember(room, name);
-        room.cat.lastCheckin = now;
-        bumpMood(room, firstToday ? 8 : 2);
-        break;
-      }
       case "pat": {
         touchMember(room, name);
         room.cat.lastPat = now;
@@ -1108,12 +1191,12 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
       case "gift": {
         const targetName = action.target.trim();
         if (!room.members.some((item) => item.displayName === targetName)) {
-          throw new Error("They're not in the den yet");
+          throw new Error("他们还不在小屋里");
         }
-        if (targetName === name) throw new Error("Leave this for them");
-        if (!GIFT_KINDS.some((item) => item.id === action.kind)) throw new Error("Unknown gift");
+        if (targetName === name) throw new Error("留给别人吧");
+        if (!GIFT_KINDS.some((item) => item.id === action.kind)) throw new Error("换一个吧");
         const note = action.kind === "note" ? (action.note ?? "").trim().slice(0, 80) : "";
-        if (action.kind === "note" && !note) throw new Error("Write a little note");
+        if (action.kind === "note" && !note) throw new Error("先写一句");
         touchMember(room, name);
         room.gifts.unshift({
           id: uid(),
@@ -1142,6 +1225,6 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
     }
 
     await saveRoom(room);
-    return cloneRoom(room);
+    return { room: cloneRoom(room), claim: issuedClaim };
   });
 }

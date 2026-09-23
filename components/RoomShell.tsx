@@ -54,7 +54,7 @@ export function RoomShell({
       router.replace(`/?room=${encodeURIComponent(id || roomId)}`);
       return;
     }
-    writeSession({ room: id, displayName: session.displayName });
+    writeSession({ room: id, displayName: session.displayName, claim: session.claim });
     setName(session.displayName);
   }, [roomId, router]);
 

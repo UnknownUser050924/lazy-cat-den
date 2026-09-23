@@ -19,6 +19,7 @@ export type Member = {
   statusId: string | null;
   visitDays: string[];
   profile: Profile;
+  claimHash?: string;
 };
 
 export type Question = {

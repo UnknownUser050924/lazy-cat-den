@@ -16,10 +16,16 @@ export async function POST(req: Request) {
     return NextResponse.redirect(back, 303);
   }
 
-  await applyAction(id, { type: "join", displayName });
-  back.searchParams.set("room", id);
-  back.searchParams.set("joined", displayName);
-  const response = NextResponse.redirect(back, 303);
-  response.headers.append("Set-Cookie", sessionCookie({ room: id, displayName }));
-  return response;
+  try {
+    const { claim } = await applyAction(id, { type: "join", displayName });
+    back.searchParams.set("room", id);
+    back.searchParams.set("joined", displayName);
+    const response = NextResponse.redirect(back, 303);
+    response.headers.append("Set-Cookie", sessionCookie({ room: id, displayName, claim }));
+    return response;
+  } catch (err) {
+    back.searchParams.set("room", id);
+    back.searchParams.set("error", err instanceof Error ? err.message : "进不去");
+    return NextResponse.redirect(back, 303);
+  }
 }
