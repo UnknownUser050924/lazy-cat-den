@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Page } from "@/components/Page";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 import type { Memory } from "@/lib/types";
 
@@ -59,24 +60,24 @@ export default function MemoriesPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <Page width="wide" className="space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">我们的小故事</h1>
         <p className="text-sm text-muted">Our little story</p>
       </header>
       {featured ? (
         <Link href={memoryHref(roomId, featured)} className="block rounded-[28px] bg-blush px-5 py-5">
-          <p className="text-xs font-bold tracking-[0.16em] text-rose">FEATURED</p>
-          <p className="mt-2 text-xl font-extrabold">{featured.titleZh}</p>
+          <p className="text-xs font-bold tracking-[0.16em] text-rose-deep">FEATURED</p>
+          <p className="mt-2 text-xl font-extrabold text-ink">{featured.titleZh}</p>
           <p className="mt-1 text-xs text-muted">{formatTime(featured.createdAt)}</p>
         </Link>
       ) : null}
       {room.memories.length === 0 ? <p className="text-sm text-muted">故事会在有人使用小屋时自己长出来。</p> : null}
-      <ol className="grid gap-3 sm:grid-cols-2">
+      <ol className="grid gap-3 @min-[32rem]:grid-cols-2">
         {room.memories.map((memory) => (
           <li key={memory.id}>
             <Link href={memoryHref(roomId, memory)} className="card block h-full rounded-[24px] px-4 py-3">
-              <p className="text-xs text-rose">{MARK[memory.kind] ?? "记"}</p>
+              <p className="text-xs font-bold text-rose-deep">{MARK[memory.kind] ?? "记"}</p>
               <p className="mt-1 font-bold">{memory.titleZh}</p>
               <p className="mt-1 text-xs text-muted">
                 {formatTime(memory.createdAt)}
@@ -86,6 +87,6 @@ export default function MemoriesPage() {
           </li>
         ))}
       </ol>
-    </div>
+    </Page>
   );
 }

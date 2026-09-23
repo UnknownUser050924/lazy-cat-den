@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Page } from "@/components/Page";
 import { CatMascot, moodLabel } from "@/components/CatMascot";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 import { catPose, catSpeech, skyPhase } from "@/lib/cottage";
@@ -42,7 +43,7 @@ export default function CatPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-5 text-center">
+    <Page width="cat" className="space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">懒猫 The cat</h1>
         <p className="text-sm text-muted">今天摸摸它，它就会记得有人来过</p>
@@ -103,6 +104,6 @@ export default function CatPage() {
           如果一整天都没人来，心情会慢慢掉下来。打开小屋或摸摸它，它就会开心一点。
         </p>
       </section>
-    </div>
+    </Page>
   );
 }

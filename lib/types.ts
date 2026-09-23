@@ -129,30 +129,89 @@ export type CatState = {
 
 export type RpsPick = "rock" | "scissors" | "paper";
 
-export type RpsSession = {
+export type GameKind = "rps" | "sync" | "memory" | "draw";
+
+type GameBase = {
   id: string;
-  gameType: "rps";
-  status: "picking" | "reveal" | "done";
   players: string[];
-  picks: Partial<Record<string, RpsPick>>;
-  locked: string[];
   scores: Record<string, number>;
   round: number;
   createdAt: number;
   updatedAt: number;
   lastActionBy: string;
+  deadline?: number;
   winner?: string;
 };
 
+export type RpsSession = GameBase & {
+  gameType: "rps";
+  status: "picking" | "reveal" | "done";
+  picks: Partial<Record<string, RpsPick>>;
+  locked: string[];
+};
+
+export type SyncSession = GameBase & {
+  gameType: "sync";
+  status: "answering" | "reveal" | "done";
+  promptId: string;
+  promptZh: string;
+  options: string[];
+  answers: Partial<Record<string, string>>;
+  submitted: string[];
+};
+
+export type MemoryCard = {
+  id: string;
+  pair: string;
+  face: "down" | "up" | "matched";
+};
+
+export type MemorySession = GameBase & {
+  gameType: "memory";
+  status: "turn" | "peek" | "done";
+  cards: MemoryCard[];
+  turn: string;
+  peek: { by: string; a: string; b?: string; until: number } | null;
+};
+
+export type DrawStroke = {
+  id: string;
+  color: string;
+  width: number;
+  mode: "pen" | "erase";
+  points: number[];
+};
+
+export type DrawGuess = {
+  by: string;
+  text: string;
+  at: number;
+  correct?: boolean;
+};
+
+export type DrawSession = GameBase & {
+  gameType: "draw";
+  status: "play" | "reveal" | "done";
+  artist: string;
+  wordId: string;
+  word?: string;
+  wordLen?: number;
+  strokes: DrawStroke[];
+  guesses: DrawGuess[];
+  order: string[];
+};
+
+export type GameSession = RpsSession | SyncSession | MemorySession | DrawSession;
+
 export type GameRecent = {
   id: string;
-  gameType: "rps";
+  gameType: GameKind;
   titleZh: string;
   at: number;
 };
 
 export type GameDesk = {
-  active: RpsSession | null;
+  active: GameSession | null;
   recent: GameRecent[];
   stamp?: number;
 };
@@ -222,7 +281,16 @@ export type RoomAction =
   | { type: "joinRps"; displayName: string }
   | { type: "lockRps"; displayName: string; pick: RpsPick }
   | { type: "nextRps"; displayName: string }
-  | { type: "clearRps"; displayName: string };
+  | { type: "clearRps"; displayName: string }
+  | { type: "startGame"; displayName: string; gameType: GameKind }
+  | { type: "joinGame"; displayName: string }
+  | { type: "submitSync"; displayName: string; answer: string }
+  | { type: "nextSync"; displayName: string }
+  | { type: "flipMemory"; displayName: string; cardId: string }
+  | { type: "drawStroke"; displayName: string; stroke: DrawStroke }
+  | { type: "drawClear"; displayName: string }
+  | { type: "drawGuess"; displayName: string; text: string }
+  | { type: "nextDraw"; displayName: string };
 
 export type ClientAction = RoomAction extends infer T
   ? T extends { displayName: string }

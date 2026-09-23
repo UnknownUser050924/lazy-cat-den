@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Page } from "@/components/Page";
 import { useRoomContext } from "@/components/RoomShell";
 import { DAILY_PROMPTS } from "@/lib/constants";
 import { promptForDate } from "@/lib/cottage";
@@ -25,7 +26,7 @@ export default function TodayPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <Page className="space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">今日问题</h1>
         <p className="text-sm text-muted">{dateLabel(now)} · {date}</p>
@@ -39,7 +40,7 @@ export default function TodayPage() {
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder={`${displayName} 的回答`}
-          className="w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-3 outline-none"
+          className="w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-3 text-ink outline-none placeholder:text-muted"
         />
         <button className="w-full rounded-full bg-rose-deep py-3 font-bold text-white">回答</button>
       </form>
@@ -53,6 +54,6 @@ export default function TodayPage() {
         ))}
         {(day?.answers.length ?? 0) >= 2 ? <p className="text-center text-sm text-rose">Both answered</p> : null}
       </div>
-    </div>
+    </Page>
   );
 }

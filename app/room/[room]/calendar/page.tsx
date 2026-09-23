@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { Page } from "@/components/Page";
 import { useRoomContext } from "@/components/RoomShell";
 import { EVENT_TYPES } from "@/lib/constants";
 import { dateKey } from "@/lib/time";
@@ -40,8 +41,8 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
-      <header className="flex items-center justify-between">
+    <Page width="wide" className="space-y-5">
+      <header className="flex items-center justify-between gap-3">
         <button onClick={() => setCursor(new Date(year, month - 1, 1))} className="text-sm text-rose">
           上一月
         </button>
@@ -52,12 +53,12 @@ export default function CalendarPage() {
           下一月
         </button>
       </header>
-      <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-muted sm:gap-2">
         {["一", "二", "三", "四", "五", "六", "日"].map((day) => (
           <div key={day}>{day}</div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center">
+      <div className="grid grid-cols-7 gap-1 text-center sm:gap-2">
         {Array.from({ length: cells.start }).map((_, index) => (
           <div key={`pad-${index}`} />
         ))}
@@ -69,10 +70,10 @@ export default function CalendarPage() {
             <button
               key={key}
               onClick={() => setDate(key)}
-              className={`rounded-xl py-2 text-sm ${date === key ? "bg-rose text-white" : today ? "bg-blush text-rose-deep" : "bg-card"}`}
+              className={`min-h-12 min-w-0 rounded-xl px-0.5 py-2 text-sm sm:min-h-16 ${date === key ? "bg-rose-deep text-white" : today ? "bg-blush text-ink" : "bg-card text-ink"}`}
             >
               <div>{day}</div>
-              <div className="text-[10px] text-rose-deep">{marks.get(key) ?? ""}</div>
+              <div className={`text-[10px] ${date === key ? "text-white" : "text-rose-deep"}`}>{marks.get(key) ?? ""}</div>
             </button>
           );
         })}
@@ -82,7 +83,7 @@ export default function CalendarPage() {
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="这一天要做什么"
-          className="w-full rounded-2xl border border-[var(--line)] bg-cream/40 px-4 py-3 outline-none"
+          className="w-full rounded-2xl border border-[var(--line)] bg-cream/40 px-4 py-3 text-ink outline-none placeholder:text-muted"
         />
         <div className="flex flex-wrap gap-2">
           {EVENT_TYPES.map((item) => (
@@ -120,6 +121,6 @@ export default function CalendarPage() {
             </article>
           ))}
       </div>
-    </div>
+    </Page>
   );
 }

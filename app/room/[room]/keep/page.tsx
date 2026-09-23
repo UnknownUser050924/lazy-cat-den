@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Page } from "@/components/Page";
 import { useRoomContext } from "@/components/RoomShell";
 import { emptyProfile } from "@/lib/profile";
 import type { ClientAction, Member } from "@/lib/types";
@@ -54,7 +55,7 @@ export default function KeepPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <Page className="space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">看管</h1>
         <p className="text-sm text-muted">请出、不让进、删掉，只有你看得到。邀请进来的人没有这些按钮。</p>
@@ -111,7 +112,7 @@ export default function KeepPage() {
           />
         ))}
       </section>
-    </div>
+    </Page>
   );
 }
 

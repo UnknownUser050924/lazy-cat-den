@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Page } from "@/components/Page";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 
 const JARS = [
@@ -55,7 +56,7 @@ export default function DrawPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <Page width="wide" className="space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">抽签</h1>
         <p className="text-sm text-muted">三个罐子，抽一下就好</p>
@@ -66,7 +67,7 @@ export default function DrawPage() {
           {members.length ? ` 现在看到：${members.join("、")}` : ""}
         </p>
       ) : null}
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 @min-[28rem]:grid-cols-2 @min-[50rem]:grid-cols-3">
         {JARS.map((jar) => (
           <article key={jar.id} className="card flex flex-col rounded-[28px] p-4">
             <h2 className="text-lg font-extrabold">{jar.zh}</h2>
@@ -108,6 +109,6 @@ export default function DrawPage() {
           )}
         </div>
       </details>
-    </div>
+    </Page>
   );
 }

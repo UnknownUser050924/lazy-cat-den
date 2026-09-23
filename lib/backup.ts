@@ -113,7 +113,7 @@ export function backupHasMore(local: Room, server: Room) {
     const serverStamp = server.games?.stamp ?? 0;
     if (localStamp > serverStamp) return true;
     const remote = server.games?.active;
-    if (localStamp === serverStamp && remote && local.games.active.id === remote.id) {
+    if (localStamp === serverStamp && remote && local.games.active.id === remote.id && local.games.active.gameType === "rps" && remote.gameType === "rps") {
       const hidden = remote.status === "picking";
       if (
         Object.entries(local.games.active.picks ?? {}).some(([name, pick]) => {

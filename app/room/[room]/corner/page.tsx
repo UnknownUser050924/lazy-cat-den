@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Page } from "@/components/Page";
 import { useRoomContext } from "@/components/RoomShell";
 import { CAT_FORMS, FEELINGS, POCKET_KEYS } from "@/lib/constants";
 import { feelingOf, momentText } from "@/lib/cottage";
+import { readSession } from "@/lib/session";
 
 const FAVORITES = ["food", "music", "game", "animal"] as const;
 
@@ -57,7 +59,7 @@ export default function CornerPage() {
   const thought = momentText(member);
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <Page className="space-y-5">
       <header className="text-center">
         <p className="text-xs tracking-[0.2em] text-rose">CORNER</p>
         <h1 className="mt-1 text-3xl font-extrabold">{member.displayName}</h1>
@@ -102,6 +104,10 @@ export default function CornerPage() {
       </section>
 
       {mine ? (
+        <HouseKey />
+      ) : null}
+
+      {mine ? (
         <button type="button" onClick={() => setEditing(true)} className="soft-btn w-full rounded-full bg-rose-deep py-3 font-bold text-white">
           编辑角落
         </button>
@@ -113,14 +119,14 @@ export default function CornerPage() {
       {mine ? (
         <dialog
           ref={dialogRef}
-          className="sheet w-[min(28rem,calc(100vw-1.5rem))] bg-transparent p-0 text-ink backdrop:bg-[rgba(74,59,54,0.38)]"
+          className="sheet text-ink"
           onCancel={(event) => {
             event.preventDefault();
             void finish();
           }}
           aria-labelledby="edit-corner"
         >
-          <div className="card max-h-[80dvh] space-y-4 overflow-y-auto rounded-[28px] p-5">
+          <div className="card max-h-[min(80dvh,calc(100dvh-2rem))] space-y-4 overflow-y-auto rounded-[28px] p-5">
             <div className="flex items-center justify-between">
               <h2 id="edit-corner" className="text-xl font-extrabold">编辑角落</h2>
               <button type="button" disabled={closing} onClick={() => void finish()} className="text-sm text-muted disabled:opacity-60">
@@ -202,7 +208,39 @@ export default function CornerPage() {
           </div>
         </dialog>
       ) : null}
-    </div>
+    </Page>
+  );
+}
+
+function HouseKey() {
+  const claim = readSession()?.claim ?? "";
+  const [copied, setCopied] = useState(false);
+  if (!claim) {
+    return (
+      <section className="rounded-[24px] border border-[var(--line)] bg-card px-4 py-3 text-sm text-muted">
+        这台设备还没拿到钥匙。先在小屋里待一会儿，再回来看。
+      </section>
+    );
+  }
+  return (
+    <section className="rounded-[24px] border border-[var(--line)] bg-card px-4 py-3">
+      <p className="text-sm font-bold text-ink">小屋钥匙</p>
+      <p className="mt-1 text-xs leading-relaxed text-muted">
+        换手机或清掉记录时，把这串钥匙带走。别人只知道房间名和你的名字，进不了这个位子。不要发给外人。
+      </p>
+      <code className="mt-2 block break-all rounded-2xl bg-blush/50 px-3 py-2 text-xs text-ink">{claim}</code>
+      <button
+        type="button"
+        className="mt-2 text-xs font-bold text-rose-deep"
+        onClick={async () => {
+          await navigator.clipboard.writeText(claim);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1400);
+        }}
+      >
+        {copied ? "已复制" : "复制钥匙"}
+      </button>
+    </section>
   );
 }
 
@@ -295,11 +333,11 @@ function SavedField({
           focused.current = false;
           void flush();
         }}
-        className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-2 font-normal"
+        className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-2 font-normal text-ink placeholder:text-muted"
       />
       <p className="mt-1 text-xs font-normal" aria-live="polite">
         {status === "saving" ? <span className="text-muted">保存中…</span> : null}
-        {status === "saved" ? <span className="text-rose">已保存</span> : null}
+        {status === "saved" ? <span className="text-rose-deep">已保存</span> : null}
         {status === "error" ? (
           <button type="button" className="font-bold text-rose-deep" onClick={() => void flush()}>
             没存上，再试一次

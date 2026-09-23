@@ -1,90 +1,158 @@
 "use client";
 
-import { useEffect } from "react";
-import { RPS_PICKS } from "@/lib/games";
+import { useEffect, useState } from "react";
+import { IconBrush, IconCards, IconHands, IconRps } from "@/components/NavIcons";
+import { Page } from "@/components/Page";
+import { DrawBoard } from "@/components/games/DrawBoard";
+import { MemoryBoard } from "@/components/games/MemoryBoard";
+import { RpsBoard } from "@/components/games/RpsBoard";
+import { SyncBoard } from "@/components/games/SyncBoard";
 import { useRoomContext } from "@/components/RoomShell";
-import type { RpsPick } from "@/lib/types";
+import { gameTitle } from "@/lib/games";
+import type { GameKind } from "@/lib/types";
+
+const CARDS: {
+  id: GameKind;
+  zh: string;
+  text: string;
+  players: string;
+  action: string;
+  icon: typeof IconRps;
+}[] = [
+  {
+    id: "rps",
+    zh: "石头剪刀布",
+    text: "大家一起出拳，选完才揭晓。先到 2 分。",
+    players: "2人以上",
+    action: "开始",
+    icon: IconRps,
+  },
+  {
+    id: "sync",
+    zh: "默契挑战",
+    text: "同一道题，先悄悄答。大家都答完或时间到了再一起揭晓。答案相同的人各得 1 分，先到 3 分。",
+    players: "2人以上",
+    action: "开始",
+    icon: IconHands,
+  },
+  {
+    id: "memory",
+    zh: "记忆翻牌",
+    text: "同一块牌面，轮流翻两张。翻对再来一次，翻错就换人。",
+    players: "2人以上",
+    action: "开始",
+    icon: IconCards,
+  },
+  {
+    id: "draw",
+    zh: "你画我猜",
+    text: "轮流画画。只有画画的人看见词，别人来猜。猜中画画的人和猜对的人都有分。",
+    players: "2人以上",
+    action: "进入",
+    icon: IconBrush,
+  },
+];
 
 export default function GamesPage() {
   const { room, displayName, act, busy, error, setError } = useRoomContext();
+  const [picked, setPicked] = useState<GameKind>("rps");
+
+  const game = room?.games?.active ?? null;
+  const playing = Boolean(game && game.status !== "done");
+  const names = room ? [...new Set(room.members.map((member) => member.displayName))] : [];
 
   useEffect(() => {
-    if (!room || !displayName) return;
-    const game = room.games?.active;
-    if (!game || game.status === "done") return;
+    if (!room || !displayName || !game || game.status === "done") return;
     if (game.players.includes(displayName)) return;
-    act({ type: "joinRps" }).catch(() => undefined);
-  }, [act, displayName, room]);
+    act({ type: "joinGame" }).catch(() => undefined);
+  }, [act, displayName, game, room]);
+
+  useEffect(() => {
+    if (game?.gameType) setPicked(game.gameType);
+  }, [game?.gameType]);
 
   if (!room) return <p className="text-center text-muted">打开游戏机…</p>;
 
-  const game = room.games?.active ?? null;
-  const names = [...new Set(room.members.map((member) => member.displayName))];
-  const playing = Boolean(game && game.status !== "done");
-  const inGame = Boolean(game && game.players.includes(displayName));
-
-  async function start() {
+  async function start(kind: GameKind) {
     setError(null);
     if (game?.status === "done") await act({ type: "clearRps" });
-    await act({ type: "startRps" });
+    await act({ type: "startGame", gameType: kind });
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <Page width="wide" className="space-y-4">
       <header>
         <h1 className="text-2xl font-extrabold">一起玩</h1>
-        <p className="text-sm text-muted">谁在小屋里谁都能玩，选完才揭晓</p>
+        <p className="text-sm text-muted">选一种玩法。谁在小屋里谁都能加入，一局只开一种。</p>
       </header>
-
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={busy || playing || names.length < 2}
-          onClick={start}
-          className="rounded-full bg-rose-deep px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
-        >
-          开始一局
-        </button>
-        {playing ? (
-          <a href="#board" className="rounded-full bg-blush px-4 py-2 text-sm font-bold text-rose-deep">
-            继续这一局
-          </a>
-        ) : null}
-        {game ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => act({ type: "clearRps" })}
-            className="rounded-full px-4 py-2 text-sm font-bold text-muted"
-          >
-            结束这局
-          </button>
-        ) : null}
-      </div>
 
       {names.length < 2 ? <p className="text-sm text-muted">等另一个人走进小屋，就可以一起玩。</p> : null}
       {error ? <p className="text-sm text-rose-deep">{error}</p> : null}
 
-      <section>
-        <h2 className="text-sm font-bold text-rose-deep">快速对战</h2>
-        <button
-          type="button"
-          disabled={busy || playing || names.length < 2}
-          onClick={start}
-          className="card mt-2 w-full rounded-3xl px-4 py-4 text-left disabled:opacity-70"
-        >
-          <p className="font-extrabold">石头剪刀布</p>
-          <p className="text-xs text-muted">
-            {names.length < 2 ? "等另一个人来" : `在线的人一起玩，后来的人也能加入 · 先到 2 分`}
-          </p>
-        </button>
-      </section>
+      <div className="grid grid-cols-1 gap-3 @min-[36rem]:grid-cols-2">
+        {CARDS.map((card) => {
+          const Icon = card.icon;
+          const active = game?.gameType === card.id && game.status !== "done";
+          const selected = picked === card.id;
+          return (
+            <article
+              key={card.id}
+              className={`game-soft card rounded-[24px] px-4 py-4 ${
+                active ? "ring-2 ring-rose-deep" : selected ? "border-rose bg-[color-mix(in_srgb,var(--blush)_28%,var(--card))]" : ""
+              }`}
+            >
+              <button type="button" className="w-full text-left" onClick={() => setPicked(card.id)}>
+                <span className="flex items-start gap-3">
+                  <span className="mt-0.5 text-rose-deep">
+                    <Icon />
+                  </span>
+                  <span>
+                    <span className="block font-extrabold text-ink">{card.zh}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-muted">{card.text}</span>
+                    <span className="mt-2 block text-[11px] font-bold text-rose-deep">{card.players}</span>
+                  </span>
+                </span>
+              </button>
+              <div className="mt-3 flex gap-2">
+                {active ? (
+                  <a href="#board" className="rounded-full bg-blush px-4 py-2 text-sm font-bold text-rose-deep">
+                    继续这一局
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy || playing || names.length < 2}
+                    onClick={() => start(card.id)}
+                    className="rounded-full bg-rose-deep px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+                  >
+                    {card.action}
+                  </button>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
 
-      {game ? <Board inGame={inGame} /> : null}
+      {game ? (
+        <div id="board">
+          {game.status !== "done" ? (
+            <div className="mb-2 flex justify-end">
+              <button type="button" disabled={busy} onClick={() => act({ type: "clearRps" })} className="text-xs font-bold text-muted">
+                结束这局{gameTitle(game.gameType)}
+              </button>
+            </div>
+          ) : null}
+          {game.gameType === "rps" ? <RpsBoard /> : null}
+          {game.gameType === "sync" ? <SyncBoard /> : null}
+          {game.gameType === "memory" ? <MemoryBoard /> : null}
+          {game.gameType === "draw" ? <DrawBoard /> : null}
+        </div>
+      ) : null}
 
       {room.games?.recent?.length ? (
         <section>
-          <h2 className="text-sm font-bold">最近一局</h2>
+          <h2 className="text-sm font-bold text-ink">最近一局</h2>
           <ul className="mt-2 space-y-1 text-sm text-muted">
             {room.games.recent.slice(0, 3).map((item) => (
               <li key={item.id}>{item.titleZh}</li>
@@ -92,96 +160,6 @@ export default function GamesPage() {
           </ul>
         </section>
       ) : null}
-    </div>
-  );
-}
-
-function Board({ inGame }: { inGame: boolean }) {
-  const { room, displayName, act, busy } = useRoomContext();
-  const game = room?.games?.active;
-  if (!game) return null;
-
-  const mine = game.picks[displayName];
-  const revealed = game.status !== "picking";
-  const waiting = game.players.filter((player) => !game.locked.includes(player));
-
-  async function choose(pick: RpsPick) {
-    await act({ type: "lockRps", pick });
-  }
-
-  return (
-    <section id="board" className="card rounded-[28px] px-4 py-5">
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <p className="font-extrabold">第 {game.round} 回合</p>
-        <p className="text-right text-muted">{game.players.map((player) => `${player} ${game.scores[player] ?? 0}`).join(" · ")}</p>
-      </div>
-
-      {game.status === "done" ? (
-        <p className="mt-4 text-center text-lg font-extrabold">{game.winner} 赢了</p>
-      ) : null}
-
-      <ul className="mt-4 space-y-2">
-        {game.players.map((player) => {
-          const pick = RPS_PICKS.find((item) => item.id === game.picks[player]);
-          const locked = game.locked.includes(player);
-          return (
-            <li key={player} className="flex items-center justify-between rounded-2xl bg-blush/60 px-4 py-3">
-              <span className="font-bold">{player === displayName ? `${player}（我）` : player}</span>
-              <span className="text-sm">
-                {revealed ? (pick ? `${pick.mark} ${pick.zh}` : "—") : locked ? "已选好" : "还在选"}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-
-      {game.status === "picking" && inGame && !mine ? (
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {RPS_PICKS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              disabled={busy}
-              onClick={() => choose(item.id)}
-              className="rounded-2xl bg-blush px-2 py-4 text-center text-rose-deep disabled:opacity-70"
-            >
-              <span className="block text-2xl" aria-hidden>
-                {item.mark}
-              </span>
-              <span className="text-sm font-bold">{item.zh}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <p className="mt-3 text-center text-sm text-muted">
-        {game.status === "done"
-          ? "这局结束啦"
-          : game.status === "reveal"
-            ? "揭晓了"
-              : mine
-              ? waiting.length
-                ? `等 ${waiting.join("、")} 选`
-                : "马上揭晓"
-              : inGame
-                ? "选一个，别人现在看不到"
-                : game.status === "picking"
-                  ? "正在加入这局…"
-                  : "这一回合已经出完了，下一回合可以加入"}
-      </p>
-
-      <div className="mt-4 flex justify-center gap-2">
-        {game.status === "reveal" ? (
-          <button type="button" disabled={busy} onClick={() => act({ type: "nextRps" })} className="rounded-full bg-rose-deep px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
-            下一回合
-          </button>
-        ) : null}
-        {game.status === "done" ? (
-          <button type="button" disabled={busy} onClick={() => act({ type: "clearRps" })} className="rounded-full bg-blush px-4 py-2 text-sm font-bold text-rose-deep disabled:opacity-60">
-            收起这局
-          </button>
-        ) : null}
-      </div>
-    </section>
+    </Page>
   );
 }

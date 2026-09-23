@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Page } from "@/components/Page";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 
 export default function WishlistPage() {
@@ -20,7 +21,7 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <Page className="space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">愿望 Wishlist</h1>
         <p className="text-sm text-muted">想一起做的、想吃的、想看的</p>
@@ -30,7 +31,7 @@ export default function WishlistPage() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="加一条愿望 Add a wish"
-          className="flex-1 rounded-2xl border border-[var(--line)] bg-card px-4 py-3 outline-none focus:border-rose"
+          className="min-w-0 flex-1 rounded-2xl border border-[var(--line)] bg-card px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-rose"
         />
         <button
           disabled={busy}
@@ -89,6 +90,6 @@ export default function WishlistPage() {
           ))}
         </section>
       ) : null}
-    </div>
+    </Page>
   );
 }

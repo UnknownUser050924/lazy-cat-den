@@ -6,9 +6,10 @@
   --rose: #d98993;
   --rose-deep: #c36b76;
   --ink: #4a3b36;
-  --muted: #8a736c;
+  --muted: #6e5751;
   --card: #fffaf6;
   --line: rgba(195, 107, 118, 0.16);
+  --nav: 14.5rem;
 }
 
 @theme inline {
@@ -27,6 +28,29 @@ body {
   min-height: 100%;
   overflow-x: hidden;
   background: var(--cream);
+  color: var(--ink);
+}
+
+.join-screen {
+  background:
+    radial-gradient(ellipse 42% 36% at 8% 18%, color-mix(in srgb, var(--blush) 55%, transparent), transparent 72%),
+    radial-gradient(ellipse 34% 32% at 96% 88%, color-mix(in srgb, var(--rose) 16%, transparent), transparent 70%),
+    var(--cream);
+  color: var(--ink);
+}
+
+html[data-sky="evening"] .join-screen,
+html[data-sky="night"] .join-screen {
+  background:
+    radial-gradient(ellipse 42% 36% at 8% 18%, color-mix(in srgb, var(--blush) 55%, transparent), transparent 72%),
+    radial-gradient(ellipse 34% 32% at 96% 88%, color-mix(in srgb, var(--rose) 16%, transparent), transparent 70%),
+    var(--cream);
+  color: var(--ink);
+}
+
+html[data-sky="night"] .join-screen .card {
+  background: var(--card);
+  border-color: var(--line);
   color: var(--ink);
 }
 
@@ -65,6 +89,18 @@ html[data-sky="night"] .stars {
 
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+input,
+textarea,
+select {
+  color: var(--ink);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 
 .card {
@@ -165,46 +201,15 @@ html[data-sky="night"] .cottage-scene {
   color: #f6ebe6;
 }
 
-.cottage-window {
-  display: grid;
-  width: 7.5rem;
-  height: 5.25rem;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.35rem;
-  padding: 0.45rem 0.45rem 0.55rem;
-  border-radius: 1.35rem 1.35rem 0.35rem 0.35rem;
-  border: 3px solid #f3e6d8;
-  background: #f7efe6;
-  box-shadow: 0 0.45rem 0 #e7d3c4;
-}
-
-.cottage-window span {
-  border-radius: 0.2rem;
-  background: linear-gradient(#fff4c8, #b9ddf4);
-}
-
-.cottage-window span:nth-child(1) {
-  border-radius: 0.9rem 0.2rem 0.2rem 0.2rem;
-}
-
-.cottage-window span:nth-child(2) {
-  border-radius: 0.2rem 0.9rem 0.2rem 0.2rem;
-}
-
-html[data-sky="evening"] .cottage-window span {
-  background: linear-gradient(#f8d48a, #e08a78);
-}
-
-html[data-sky="night"] .cottage-window {
-  border-color: #6a5560;
-  background: #3a3036;
-  box-shadow: 0 0.45rem 0 #2a2228;
-}
-
-html[data-sky="night"] .cottage-window span {
-  background:
-    radial-gradient(circle at 30% 35%, #fff 0 1.5px, transparent 2px),
-    linear-gradient(#1b2438, #31425f);
+.cottage-window-art {
+  display: block;
+  width: clamp(6.75rem, 11vw, 10rem);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
 }
 
 .cottage-lamp {
@@ -279,19 +284,44 @@ html[data-sky="night"] .cottage-lamp {
   background: var(--rose-deep);
 }
 
+.page-shell {
+  container-type: inline-size;
+}
+
+.room-nav {
+  background: color-mix(in srgb, var(--blush) 22%, var(--cream));
+  color: var(--ink);
+}
+
+html[data-sky="night"] .room-nav {
+  background: #f7efe8;
+  color: var(--ink);
+}
+
 dialog.sheet {
   position: fixed;
-  inset: 0;
-  margin: auto;
-  width: min(24rem, calc(100vw - 2rem));
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  width: min(28rem, calc(100vw - 2rem));
   max-width: calc(100vw - 2rem);
-  max-height: min(80dvh, 36rem);
+  max-height: min(80dvh, calc(100dvh - 1.5rem));
   padding: 0;
   border: none;
   background: transparent;
   overflow: hidden;
-  color: inherit;
+  color: var(--ink);
   z-index: 80;
+}
+
+@media (min-width: 64rem) {
+  dialog.sheet {
+    left: calc(var(--nav) + (100vw - var(--nav)) / 2);
+    width: min(28rem, calc(100vw - var(--nav) - 2rem));
+    max-width: calc(100vw - var(--nav) - 2rem);
+  }
 }
 
 dialog.sheet::backdrop {
@@ -305,8 +335,38 @@ dialog.sheet::backdrop {
   .heart-float,
   .cat-spot-window,
   .cat-spot-person,
-  .cat-spot-sleep {
+  .cat-spot-sleep,
+  .mem-card,
+  .game-soft {
     animation: none !important;
+    transition: none !important;
+  }
+
+  .floaty,
+  .wiggle,
+  .pop-in,
+  .heart-float,
+  .cat-spot-window,
+  .cat-spot-person,
+  .cat-spot-sleep,
+  .mem-card {
     transform: none !important;
   }
+}
+
+.mem-card {
+  min-height: 3.4rem;
+  min-width: 0;
+  transition: transform 0.28s ease;
+  transform-style: preserve-3d;
+}
+
+@media (min-width: 40rem) {
+  .mem-card {
+    min-height: 4rem;
+  }
+}
+
+.game-soft {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }

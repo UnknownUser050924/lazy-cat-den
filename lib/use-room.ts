@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { backupHasMore, readBackup, writeBackup } from "./backup";
 import { readSession, writeSession } from "./session";
 import { isForcedOut } from "./constants";
+import { pollMs } from "./games";
 import type { ClientAction, Room } from "./types";
 
 export function useRoom(roomId: string, displayName: string | null) {
@@ -120,17 +121,18 @@ export function useRoom(roomId: string, displayName: string | null) {
         setError(err instanceof Error ? err.message : "Could not load room");
       }
     });
+    const ms = pollMs(room);
     const timer = setInterval(() => {
       refresh().catch((err: unknown) => {
         const message = err instanceof Error ? err.message : "";
         if (!cancelled && isForcedOut(message)) setError(message);
       });
-    }, 2500);
+    }, ms);
     return () => {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [refresh]);
+  }, [refresh, room?.games?.active?.gameType, room?.games?.active?.status]);
 
   // Keep checking in until this person appears in the room member list.
   useEffect(() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Page } from "@/components/Page";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 
 export default function LetterPage() {
@@ -18,10 +19,10 @@ export default function LetterPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <Page className="space-y-5">
       <header>
-        <h1 className="text-2xl font-extrabold">给你的信</h1>
-        <p className="text-sm text-muted">拆开前先藏着。小屋里谁拆开谁看。</p>
+        <h1 className="text-2xl font-extrabold">信箱</h1>
+        <p className="text-sm text-muted">写给这间小屋的人。还没拆开时先藏着。谁在小屋里，谁都能拆开看，不是只给一个人的私信。</p>
       </header>
       <form onSubmit={send} className="card space-y-3 rounded-[24px] p-4">
         <textarea
@@ -29,7 +30,7 @@ export default function LetterPage() {
           onChange={(event) => setText(event.target.value)}
           rows={3}
           placeholder="今天也要好好吃饭哦"
-          className="w-full resize-none rounded-2xl border border-[var(--line)] bg-cream/40 px-4 py-3 outline-none"
+          className="w-full resize-none rounded-2xl border border-[var(--line)] bg-cream/40 px-4 py-3 text-ink outline-none placeholder:text-muted"
         />
         <button className="w-full rounded-full bg-rose-deep py-3 font-bold text-white">留下信</button>
       </form>
@@ -53,18 +54,18 @@ export default function LetterPage() {
                     setOpenId(letter.id);
                   }}
                 >
-                  Open
+                  拆开
                 </button>
               )}
               {letter.openedAt && letter.openedBy ? (
                 <p className="mt-2 text-xs text-muted">
-                  Opened by {letter.openedBy} · {formatTime(letter.openedAt)}
+                  {letter.openedBy}拆开了 · {formatTime(letter.openedAt)}
                 </p>
               ) : null}
             </article>
           );
         })}
       </div>
-    </div>
+    </Page>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { Page } from "@/components/Page";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 
 export default function ChatPage() {
@@ -41,12 +42,12 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[70dvh] w-full max-w-xl flex-col">
+    <Page width="chat" className="flex min-h-[calc(100dvh-7.5rem)] w-full flex-col">
       <header>
         <h1 className="text-2xl font-extrabold">聊天</h1>
         <p className="text-sm text-muted">留在小屋里的话</p>
       </header>
-      {heart ? <p className="heart-float mt-2 text-sm text-rose" aria-live="polite">♡ {room?.messages[0]?.author}留了一句</p> : null}
+      {heart ? <p className="heart-float mt-2 text-sm text-rose-deep" aria-live="polite">♡ {room?.messages[0]?.author}留了一句</p> : null}
 
       <div className="mt-4 flex flex-1 flex-col gap-2">
         {messages.length === 0 ? (
@@ -57,11 +58,11 @@ export default function ChatPage() {
             return (
               <div key={item.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[80%] rounded-[22px] px-4 py-2 ${
-                    mine ? "bg-[color-mix(in_srgb,var(--rose)_82%,white)] text-white" : "bg-card text-ink shadow-sm"
+                  className={`max-w-[min(80%,28rem)] rounded-[22px] px-4 py-2 ${
+                    mine ? "bg-blush text-ink" : "bg-card text-ink shadow-sm"
                   }`}
                 >
-                  <p className={`text-[11px] ${mine ? "text-white/80" : "text-muted"}`}>
+                  <p className="text-[11px] text-muted">
                     {item.author} · {formatTime(item.createdAt)}
                   </p>
                   <p className="mt-0.5 whitespace-pre-wrap break-words">{item.text}</p>
@@ -75,13 +76,13 @@ export default function ChatPage() {
 
       {error ? <p className="mt-3 text-sm text-rose-deep">{error}</p> : null}
 
-      <form onSubmit={send} className="sticky bottom-24 mt-4 flex gap-2 md:bottom-0">
+      <form onSubmit={send} className="sticky bottom-0 z-[1] -mx-1 mt-4 flex gap-2 bg-[color-mix(in_srgb,var(--cream)_94%,transparent)] py-3 backdrop-blur-md">
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}
           maxLength={200}
           placeholder="写一句… say something"
-          className="min-w-0 flex-1 rounded-full border border-[var(--line)] bg-card px-4 py-3 outline-none focus:border-rose"
+          className="min-w-0 flex-1 rounded-full border border-[var(--line)] bg-card px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-rose"
         />
         <button
           disabled={busy || !text.trim()}
@@ -90,6 +91,6 @@ export default function ChatPage() {
           发送
         </button>
       </form>
-    </div>
+    </Page>
   );
 }

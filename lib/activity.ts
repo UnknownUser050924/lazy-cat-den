@@ -54,11 +54,17 @@ export function activityHref(roomId: string, memory: Memory): string | null {
   return null;
 }
 
+export function unreadLetterCount(room: Room, selfName: string) {
+  return (room.letters ?? []).filter((letter) => letter.from !== selfName && !letter.openedAt).length;
+}
+
 export function navHints(room: Room, selfName: string) {
   const game = consoleState(room, selfName);
+  const letterCount = unreadLetterCount(room, selfName);
   return {
     qa: (room.questions ?? []).some((item) => !item.answer),
     games: game === "waiting" || game === "active",
-    letter: (room.letters ?? []).some((letter) => letter.from !== selfName && letter.openedBy !== selfName),
+    letter: letterCount > 0,
+    letterCount,
   };
 }

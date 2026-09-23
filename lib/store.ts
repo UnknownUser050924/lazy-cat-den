@@ -25,7 +25,8 @@ import {
 } from "./constants";
 import { claimMatches, hashClaim, newClaim } from "./claim";
 import { promptForDate } from "./cottage";
-import { emptyGames, mergeGames, rpsRoundWinners, sanitizeGames } from "./games";
+import { emptyGames, mergeGames, sanitizeGames } from "./games";
+import { applyPlay, tickGames } from "./play";
 import { isKeeper } from "./keepers";
 import { dateKey, daysBetweenKeys } from "./time";
 import { emptyProfile } from "./profile";
@@ -33,7 +34,7 @@ import type { Member, Memory, Profile, Room, RoomAction } from "./types";
 
 export type MemberAuth = { displayName?: string; claim?: string };
 
-const NAME_TAKEN = "这个名字已经有人在用。换一个名字，或用原来进过小屋的手机打开。";
+const NAME_TAKEN = "这个名字已经有人在用。用原来进过小屋的手机打开，或填进你保存的钥匙。";
 const NEED_SESSION = "先走进小屋";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -512,12 +513,15 @@ export async function notePresence(
   return withLock(async () => {
     const name = cleanName(displayName);
     const room = applyDecay(await loadRoom(id));
+    const ticked = tickGames(room, Date.now(), remember);
     const existing = room.members.find((item) => item.displayName === name);
     if (!existing) {
+      if (ticked) await saveRoom(room);
       return { room: cloneRoom(room) };
     }
     if (existing.claimHash) {
       if (!claimMatches(existing.claimHash, claim)) {
+        if (ticked) await saveRoom(room);
         return { room: cloneRoom(room) };
       }
       touchMember(room, name);
@@ -593,9 +597,22 @@ function dropFromGame(room: Room, name: string) {
   const game = room.games?.active;
   if (!game) return;
   game.players = game.players.filter((player) => player !== name);
-  delete game.picks[name];
-  game.locked = game.locked.filter((player) => player !== name);
   delete game.scores[name];
+  if (game.gameType === "rps") {
+    delete game.picks[name];
+    game.locked = game.locked.filter((player) => player !== name);
+  }
+  if (game.gameType === "sync") {
+    delete game.answers[name];
+    game.submitted = game.submitted.filter((player) => player !== name);
+  }
+  if (game.gameType === "memory" && game.turn === name) {
+    game.turn = game.players[0] ?? "";
+  }
+  if (game.gameType === "draw") {
+    game.order = game.order.filter((player) => player !== name);
+    if (game.artist === name) game.artist = game.order[0] ?? game.players[0] ?? "";
+  }
   if (game.lastActionBy === name) game.lastActionBy = game.players[0] ?? "";
   if (game.winner === name) delete game.winner;
   if (game.players.length < 2) room.games.active = null;
@@ -679,6 +696,7 @@ export async function applyAction(
   return withLock(async () => {
     const room = applyDecay(await loadRoom(id));
     const now = Date.now();
+    tickGames(room, now, remember);
     let issuedClaim: string | undefined;
     let name: string;
 
@@ -694,6 +712,11 @@ export async function applyAction(
     issuedClaim = requireActor(room, name, auth.claim);
     if ((room.banned ?? []).includes(name)) throw new Error(SEAT_BANNED);
     if ((room.clearedSeats ?? []).includes(name)) throw new Error(SEAT_CLEARED);
+
+    if (applyPlay(room, action, name, now, remember)) {
+      await saveRoom(room);
+      return { room: cloneRoom(room), claim: issuedClaim };
+    }
 
     switch (action.type) {
       case "pat": {
@@ -1171,114 +1194,6 @@ export async function applyAction(
         } else {
           profile.guesses.push({ target: target.displayName, promptId: action.promptId, correct, at: now });
         }
-        break;
-      }
-      case "startRps": {
-        touchMember(room, name);
-        const players = [
-          ...new Set(
-            room.members
-              .filter((member) => now - member.lastSeen < ONLINE_MS)
-              .map((member) => member.displayName),
-          ),
-        ];
-        if (!players.includes(name)) players.unshift(name);
-        if (room.games.active?.status === "done") room.games.active = null;
-        if (room.games.active) throw new Error("已经有一局了");
-        const scores: Record<string, number> = {};
-        for (const player of players) scores[player] = 0;
-        room.games.stamp = now;
-        room.games.active = {
-          id: uid(),
-          gameType: "rps",
-          status: "picking",
-          players,
-          picks: {},
-          locked: [],
-          scores,
-          round: 1,
-          createdAt: now,
-          updatedAt: now,
-          lastActionBy: name,
-        };
-        break;
-      }
-      case "joinRps": {
-        touchMember(room, name);
-        const game = room.games.active;
-        if (!game || game.status === "done") throw new Error("这局还没开始");
-        if (!game.players.includes(name)) {
-          game.players = [...game.players, name];
-          game.scores[name] = 0;
-          game.updatedAt = now;
-          game.lastActionBy = name;
-        }
-        break;
-      }
-      case "lockRps": {
-        const game = room.games.active;
-        if (!game || game.status !== "picking") throw new Error("这局还没开始");
-        if (!game.players.includes(name)) {
-          game.players = [...game.players, name];
-          game.scores[name] = 0;
-        }
-        if (game.locked.includes(name)) throw new Error("已经选好了");
-        const pick = action.pick;
-        if (pick !== "rock" && pick !== "scissors" && pick !== "paper") throw new Error("选一个");
-        game.picks[name] = pick;
-        game.locked = [...new Set([...game.locked, name])];
-        game.updatedAt = now;
-        game.lastActionBy = name;
-        const ready =
-          game.players.length >= 2 &&
-          game.players.every((player) => game.locked.includes(player) && game.picks[player]);
-        if (ready) {
-          for (const winner of rpsRoundWinners(game.picks)) {
-            game.scores[winner] = (game.scores[winner] ?? 0) + 1;
-          }
-          const top = Math.max(0, ...game.players.map((player) => game.scores[player] ?? 0));
-          const leaders = game.players.filter((player) => (game.scores[player] ?? 0) === top);
-          const finished = top >= 2 && leaders.length === 1;
-          game.status = finished ? "done" : "reveal";
-          room.games.stamp = now;
-          if (finished) {
-            game.winner = leaders[0];
-            room.games.recent.unshift({
-              id: game.id,
-              gameType: "rps",
-              titleZh: `${game.winner}赢了石头剪刀布`,
-              at: now,
-            });
-            room.games.recent = room.games.recent.slice(0, 12);
-            remember(room, {
-              kind: "game",
-              titleZh: "我们玩了一局石头剪刀布",
-              titleEn: "Played rock paper scissors",
-              actor: name,
-              place: "games",
-            });
-          }
-        }
-        break;
-      }
-      case "nextRps": {
-        const game = room.games.active;
-        if (!game || game.status !== "reveal") throw new Error("这回合还没揭晓");
-        if (!room.members.some((member) => member.displayName === name)) throw new Error("先走进小屋");
-        game.picks = {};
-        game.locked = [];
-        game.round += 1;
-        game.status = "picking";
-        game.updatedAt = now;
-        game.lastActionBy = name;
-        room.games.stamp = now;
-        break;
-      }
-      case "clearRps": {
-        if (!room.games.active) break;
-        if (!room.members.some((member) => member.displayName === name)) throw new Error("先走进小屋");
-        room.games.stamp = now;
-        room.games.active = null;
         break;
       }
       case "gift": {

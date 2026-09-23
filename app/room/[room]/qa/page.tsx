@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Page } from "@/components/Page";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 
 const STARTERS = ["今天过得怎么样？", "现在最想吃什么？", "这周想一起做什么？"];
@@ -20,7 +21,7 @@ export default function QAPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <Page className="space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">问答 Q&A</h1>
         <p className="text-sm text-muted">问一件小事，留给小屋里的人慢慢答</p>
@@ -43,7 +44,7 @@ export default function QAPage() {
           onChange={(e) => setQuestion(e.target.value)}
           rows={3}
           placeholder="今天想问什么？ What do you want to ask?"
-          className="w-full resize-none rounded-2xl border border-[var(--line)] bg-cream/50 px-4 py-3 outline-none focus:border-rose"
+          className="w-full resize-none rounded-2xl border border-[var(--line)] bg-cream/50 px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-rose"
         />
         <button
           disabled={busy}
@@ -85,7 +86,7 @@ export default function QAPage() {
                       setDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))
                     }
                     placeholder={item.askedBy === displayName ? "留给别人答" : "写下答案"}
-                    className="w-full rounded-2xl border border-[var(--line)] bg-cream/50 px-4 py-2 outline-none focus:border-rose"
+                    className="w-full rounded-2xl border border-[var(--line)] bg-cream/50 px-4 py-2 text-ink outline-none placeholder:text-muted focus:border-rose"
                   />
                   <button className="text-sm font-bold text-rose">回答 Answer</button>
                 </form>
@@ -94,6 +95,6 @@ export default function QAPage() {
           ))
         )}
       </div>
-    </div>
+    </Page>
   );
 }
