@@ -3,12 +3,16 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRoomContext } from "@/components/RoomShell";
 import { EVENT_TYPES } from "@/lib/constants";
+import { dateKey } from "@/lib/time";
 
 export default function CalendarPage() {
   const { room, act, error } = useRoomContext();
-  const [cursor, setCursor] = useState(() => new Date());
+  const [cursor, setCursor] = useState(() => {
+    const [year, month, day] = dateKey().split("-").map(Number);
+    return new Date(year, month - 1, day);
+  });
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => dateKey());
   const [eventType, setEventType] = useState<string>(EVENT_TYPES[0].id);
 
   const year = cursor.getFullYear();
@@ -36,7 +40,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-xl space-y-5">
       <header className="flex items-center justify-between">
         <button onClick={() => setCursor(new Date(year, month - 1, 1))} className="text-sm text-rose">
           上一月
@@ -60,11 +64,12 @@ export default function CalendarPage() {
         {Array.from({ length: cells.days }).map((_, index) => {
           const day = index + 1;
           const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const today = key === dateKey();
           return (
             <button
               key={key}
               onClick={() => setDate(key)}
-              className={`rounded-xl py-2 text-sm ${date === key ? "bg-rose text-white" : "bg-card"}`}
+              className={`rounded-xl py-2 text-sm ${date === key ? "bg-rose text-white" : today ? "bg-blush text-rose-deep" : "bg-card"}`}
             >
               <div>{day}</div>
               <div className="text-[10px] text-rose-deep">{marks.get(key) ?? ""}</div>

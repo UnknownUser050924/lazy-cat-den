@@ -20,7 +20,7 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-xl space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">愿望 Wishlist</h1>
         <p className="text-sm text-muted">想一起做的、想吃的、想看的</p>

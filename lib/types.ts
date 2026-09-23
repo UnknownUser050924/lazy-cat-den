@@ -98,6 +98,7 @@ export type Gift = {
   to: string;
   kind: string;
   createdAt: number;
+  note?: string;
 };
 
 export type Memory = {
@@ -121,6 +122,37 @@ export type CatState = {
   lastPat: number;
   lastCheckin: number;
   decayAppliedOn: string;
+  lastToy?: number;
+  lastFeed?: number;
+};
+
+export type RpsPick = "rock" | "scissors" | "paper";
+
+export type RpsSession = {
+  id: string;
+  gameType: "rps";
+  status: "picking" | "reveal" | "done";
+  players: string[];
+  picks: Partial<Record<string, RpsPick>>;
+  locked: string[];
+  scores: Record<string, number>;
+  round: number;
+  createdAt: number;
+  updatedAt: number;
+  lastActionBy: string;
+  winner?: string;
+};
+
+export type GameRecent = {
+  id: string;
+  gameType: "rps";
+  titleZh: string;
+  at: number;
+};
+
+export type GameDesk = {
+  active: RpsSession | null;
+  recent: GameRecent[];
 };
 
 export type Room = {
@@ -139,12 +171,15 @@ export type Room = {
   memories: Memory[];
   pats: Pat[];
   cat: CatState;
+  games: GameDesk;
 };
 
 export type RoomAction =
   | { type: "join"; displayName: string }
   | { type: "checkin"; displayName: string }
   | { type: "pat"; displayName: string }
+  | { type: "playToy"; displayName: string }
+  | { type: "feedCat"; displayName: string }
   | { type: "ask"; displayName: string; question: string }
   | { type: "answer"; displayName: string; questionId: string; answer: string }
   | { type: "addWish"; displayName: string; text: string }
@@ -169,7 +204,11 @@ export type RoomAction =
   | { type: "setCorner"; displayName: string; wall: string; objects: string[] }
   | { type: "setKnowMe"; displayName: string; promptId: string; answer: string }
   | { type: "guessKnowMe"; displayName: string; target: string; promptId: string; guess: string }
-  | { type: "gift"; displayName: string; target: string; kind: string };
+  | { type: "gift"; displayName: string; target: string; kind: string; note?: string }
+  | { type: "startRps"; displayName: string }
+  | { type: "lockRps"; displayName: string; pick: RpsPick }
+  | { type: "nextRps"; displayName: string }
+  | { type: "clearRps"; displayName: string };
 
 export type ClientAction = RoomAction extends infer T
   ? T extends { displayName: string }

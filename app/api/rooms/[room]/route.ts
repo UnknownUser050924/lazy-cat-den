@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { slugifyRoom } from "@/lib/constants";
 import { sessionFromRequest } from "@/lib/session";
+import { presentRoom } from "@/lib/games";
 import { applyAction, getRoom, notePresence, restoreRoom } from "@/lib/store";
 import type { RoomAction } from "@/lib/types";
 
@@ -19,7 +20,8 @@ export async function GET(req: Request, ctx: Ctx) {
     session && session.room === id
       ? await notePresence(id, session.displayName).catch(() => getRoom(id))
       : await getRoom(id);
-  return NextResponse.json(data);
+  const viewer = session?.room === id ? session.displayName : "";
+  return NextResponse.json(presentRoom(data, viewer));
 }
 
 export async function POST(req: Request, ctx: Ctx) {
@@ -30,12 +32,14 @@ export async function POST(req: Request, ctx: Ctx) {
   }
   try {
     const body = (await req.json()) as { type?: string; room?: unknown };
+    const session = sessionFromRequest(req);
+    const viewer = session?.room === id ? session.displayName : "";
     if (body.type === "restore") {
       const data = await restoreRoom(id, body.room);
-      return NextResponse.json(data);
+      return NextResponse.json(presentRoom(data, viewer));
     }
     const data = await applyAction(id, body as RoomAction);
-    return NextResponse.json(data);
+    return NextResponse.json(presentRoom(data, viewer));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Bad request";
     return NextResponse.json({ error: message }, { status: 400 });

@@ -4,13 +4,16 @@ import { FormEvent, useState } from "react";
 import { useRoomContext } from "@/components/RoomShell";
 import { DAILY_PROMPTS } from "@/lib/constants";
 import { promptForDate } from "@/lib/cottage";
+import { dateKey, dateLabel } from "@/lib/time";
+import { useNow } from "@/lib/use-now";
 
 export default function TodayPage() {
   const { room, displayName, act, error } = useRoomContext();
   const [text, setText] = useState("");
+  const now = useNow();
   if (!room) return <p className="text-center text-muted">翻开今日问题…</p>;
 
-  const date = new Date().toISOString().slice(0, 10);
+  const date = dateKey(now);
   const prompt = DAILY_PROMPTS.find((item) => item.id === promptForDate(date).id) ?? promptForDate(date);
   const day = room.daily.find((item) => item.date === date);
 
@@ -22,10 +25,10 @@ export default function TodayPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-xl space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">今日问题</h1>
-        <p className="text-sm text-muted">{date}</p>
+        <p className="text-sm text-muted">{dateLabel(now)} · {date}</p>
       </header>
       <section className="card rounded-[24px] p-4">
         <p className="text-lg font-bold">{prompt.zh}</p>

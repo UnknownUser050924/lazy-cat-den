@@ -17,7 +17,7 @@ export function BottomNav({ room }: { room: string }) {
   const base = `/room/${encodeURIComponent(room)}`;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--card)_92%,transparent)] px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md">
+    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--card)_92%,transparent)] px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md md:hidden">
       <div className="mx-auto grid max-w-lg grid-cols-6 gap-1">
         {ITEMS.map((item) => {
           const href = `${base}${item.href}`;
@@ -32,7 +32,6 @@ export function BottomNav({ room }: { room: string }) {
             >
               <div className="text-base leading-none">{item.icon}</div>
               <div className="mt-1 text-[11px] font-bold">{item.zh}</div>
-              <div className="text-[9px] opacity-70">{item.en}</div>
             </Link>
           );
         })}

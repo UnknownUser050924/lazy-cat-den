@@ -1,0 +1,2099 @@
+LAZY CAT DEN — MASTER V3 IMPLEMENTATION PROMPT
+FOR CURSOR / GROK 4.7
+
+ROLE
+You are the implementation agent for the existing Lazy Cat Den repository.
+
+DO NOT merely suggest ideas.
+DO NOT write a plan and stop.
+INSPECT the existing repository first, then IMPLEMENT the complete redesign and feature upgrade described below.
+
+The current project brief and source code are the source of truth for existing behavior. Preserve everything that currently works unless this prompt explicitly requests a redesign or merge.
+
+============================================================
+0. PRODUCT VISION
+============================================================
+
+Lazy Cat Den / 懒猫小屋 is a private digital cottage for exactly two people.
+
+The final feeling should be:
+
+    “This is our little place.”
+
+NOT:
+- a generic CRUD dashboard
+- a social network
+- a dating app
+- a public game site
+- a giant game engine
+- an AI chatbot
+- a productivity dashboard
+- a feature dump
+
+The product should feel:
+- warm
+- intimate
+- polished
+- playful
+- slightly magical
+- cozy
+- romantic without becoming childish
+- easy to understand
+- useful on phone AND laptop
+
+Core conceptual hierarchy:
+
+🏠 COTTAGE = us / our shared home
+💗 COME CLOSER = how we interact with each other
+👤 CORNER = who I am right now
+🎲 DRAW = decide something together
+💬 CHAT = talk
+❓ Q&A = know each other
+🎁 WISHLIST = things we want
+📅 CALENDAR = our plans and dates
+☀️ TODAY = our daily ritual
+💌 LETTERS = private little messages
+📖 MEMORIES = our story
+🐱 CAT = the resident of the cottage
+🎮 GAMES = our little console corner
+
+Important:
+DO NOT add everything as a top-level navigation tab.
+Keep the information architecture compact.
+
+============================================================
+1. EXISTING TECH — PRESERVE
+============================================================
+
+Existing stack:
+- Next.js 16.3.x App Router
+- TypeScript
+- React 19
+- Tailwind CSS v4
+- Nunito + Noto Sans SC
+- local room/session model
+- localStorage + lcd-session cookie
+- shared room state through lib/store.ts
+- polling around 2.5 seconds
+- Render Free
+- production build MUST remain:
+  next build --webpack
+
+Existing routes must continue working:
+/
+ /guide
+ /room/[room]
+ /room/[room]/chat
+ /room/[room]/qa
+ /room/[room]/draw
+ /room/[room]/wishlist
+ /room/[room]/cat
+ /room/[room]/letter
+ /room/[room]/today
+ /room/[room]/calendar
+ /room/[room]/corner
+ /room/[room]/memories
+
+New route:
+ /room/[room]/games
+
+Architecture:
+- one shared room document
+- persistent room changes use the existing server/store/action system
+- preserve merge/restore behavior
+- preserve phone backup behavior
+- do not create competing persistence systems
+- preserve existing Malaysia-time logic
+- preserve invite/session behavior
+- do not move to another framework
+- do not add chatbot, payments, social login, public rooms, matchmaking, XP, coins, leaderboard, or public profiles
+
+============================================================
+2. IMPORTANT VISUAL ASSET — CAT
+============================================================
+
+A new definitive mascot image has been created:
+
+    Lazy_Cat_Den_Mascot.jpg
+
+Use this image as the visual source for the main Lazy Cat Den cat.
+
+Expected project path:
+    public/assets/lazy-cat-den-mascot.jpg
+
+If the provided file is not yet in the repository, place it there before implementation.
+
+IMPORTANT:
+- replace the existing cat artwork with this mascot
+- do NOT continue using the old SVG/round-face cat as the main visual
+- do NOT redesign a different cat when this asset is available
+- keep the supplied cat recognizable
+- keep the entire cat visible
+- avoid ugly rectangular cropping
+- use object-fit / responsive image handling properly
+- maintain the cat's cream/pastel appearance
+- use subtle CSS motion around or on the image rather than changing the artwork itself
+
+Cat motion can include:
+- gentle float
+- tiny bounce when happy
+- wiggle when patted
+- short position movement inside the Cottage
+- reaction effects around the image
+
+No AI-generated cat dialogue.
+No runtime image generation.
+No replacement mascot.
+
+============================================================
+2A. DEFINITIVE 7-CAT JPG ASSET SET
+============================================================
+
+The project now has exactly 7 definitive cat JPG assets.
+Place them in:
+public/assets/cat/
+
+Exact filenames and runtime meaning:
+
+1. cat-idle.jpg
+   Default sitting mascot.
+   Use for normal Cottage state, default Cat page, calm daytime, ordinary presence.
+
+2. cat-happy.jpg
+   Happy / affectionate state.
+   Use after successful pats, high mood, successful couple interactions, completed wishes, and joyful room moments.
+
+3. cat-sleepy.jpg
+   Sleeping / cozy state.
+   Use at night, during inactivity, quiet rooms, and Together Mode.
+
+4. cat-playing.jpg
+   Playing-with-yarn state.
+   Use for toy interaction, Cat Play, playful cat events, and yarn-ball sequences.
+
+5. cat-eating.jpg
+   Eating state.
+   Use for Feed Cat / food-bowl interaction.
+
+6. cat-window.jpg
+   Looking-outside state.
+   Use by the cottage window, during sunset/evening, quiet reflection, and window moments.
+
+7. cat-surprised.jpg
+   Surprised reaction state.
+   Use for selected unexpected events, surprise interactions, special Little Moments, and playful reactions.
+
+CRITICAL ASSET RULES:
+- These 7 JPGs are the official Lazy Cat Den cat visual set.
+- Do NOT use the old SVG/round-face cat as the main visual.
+- Do NOT invent a different cat design.
+- Do NOT generate additional cat artwork unless explicitly requested later.
+- Preserve this exact visual identity across all seven states.
+- Keep each image fully visible. Do not crop ears, paws, tail, or important details.
+- Use responsive image sizing with object-fit: contain or equivalent.
+- Avoid visible rectangular borders around the images. Blend them into the warm cottage background.
+- Use CSS for lightweight movement such as float, bounce, wiggle, scale, fade, and position transitions.
+- Do not distort one image to imitate another state; switch to the correct JPG when the state changes.
+- Do not make the image itself the interactive button. Wrap it in an accessible control when interaction is intended.
+
+RUNTIME MAPPING:
+CatMascot / Cottage state -> asset
+- idle -> cat-idle.jpg
+- happy -> cat-happy.jpg
+- sleepy -> cat-sleepy.jpg
+- playing -> cat-playing.jpg
+- eating -> cat-eating.jpg
+- window -> cat-window.jpg
+- surprised -> cat-surprised.jpg
+
+Use efficient loading/preloading so transitions are smooth without unnecessarily downloading every large image on every page.
+
+============================================================
+3. DESIGN SYSTEM
+============================================================
+
+Palette:
+- cream: #fbf6f0
+- blush: #f7d6d9
+- rose: #d98993
+- rose-deep: #c36b76
+- ink: #4a3b36
+
+Fonts:
+- Nunito
+- Noto Sans SC
+
+Design language:
+- soft paper/room textures only where useful
+- gentle shadows
+- warm highlights
+- subtle borders
+- hand-drawn / illustrated feel
+- restrained decorative details
+- clear hierarchy
+- smooth, short transitions
+
+DO NOT:
+- use purple AI gradients
+- use excessive glassmorphism
+- use dashboard card grids everywhere
+- use giant rounded cards for every item
+- make emoji the main UI
+- overuse neon colors
+- create a childish nursery look
+- create an enterprise/admin appearance
+- create a game-store appearance for the Game Hub
+
+Motion:
+- soft
+- purposeful
+- brief
+- reduced-motion aware
+
+============================================================
+4. RESPONSIVE DESIGN — PHONE AND LAPTOP ARE BOTH FIRST CLASS
+============================================================
+
+PHONE:
+- feels like holding a tiny cottage
+- bottom navigation
+- large touch targets
+- vertical composition
+- compact object layout
+
+DESKTOP/LAPTOP:
+- feels like sitting inside the cottage
+- left sidebar
+- wider room
+- two partner spaces
+- cat centrally important
+- room objects placed spatially
+- richer atmosphere
+- hover affordances
+- keyboard support
+
+Breakpoints:
+<768px:
+- mobile layout
+- bottom nav
+
+768–1199px:
+- compact sidebar
+- wider room
+
+1200px+:
+- full desktop cottage composition
+
+Do NOT simply stretch mobile UI horizontally.
+
+Desktop sidebar:
+MAIN
+- 🏠 小屋
+- 💬 聊天
+- ❓ 问答
+- 🎲 抽签
+- 🎁 愿望
+- 🐱 猫
+
+MORE
+- 💌 信
+- 📅 日历
+- ☀️ 今日
+- 📖 我们的故事
+- 👤 我的角落
+- 🎮 游戏
+
+Keep sidebar narrow, elegant, scrollable, and visually consistent with the cottage.
+
+No seventh bottom-nav item on mobile.
+Game should be reached from Cottage or a compact More area.
+
+============================================================
+5. COTTAGE 2.0 — MAKE IT A REAL ROOM
+============================================================
+
+The Cottage is the center of the product.
+
+It must feel like a real small digital room, not a collection of feature cards.
+
+Main room elements:
+- window
+- lamp
+- two seats
+- cat
+- plants
+- notes
+- mailbox
+- wish box
+- draw jar/table
+- calendar object
+- today object
+- story/scrapbook object
+- game console
+- subtle floor/wall decoration
+
+Two partner seats:
+- left/right on desktop
+- cat first, then seats on mobile
+- show real members only
+- if partner is absent: “还空着一个位置”
+- show name
+- presence
+- signature
+- current feeling
+- cat form
+- 此刻
+
+Cottage object mapping:
+- envelope → 信箱
+- pinned paper → 问答
+- jar → 抽签
+- gift → 愿望
+- calendar → 日历
+- sun → 今日
+- open book → 故事
+- game console/controller → 游戏
+
+Objects must remain accessible:
+- semantic buttons/links
+- focus states
+- labels
+- touch support
+- hover is optional, not required
+
+Do not flood the room with objects.
+Objects should be visually meaningful and spaced.
+
+============================================================
+6. DAY / EVENING / NIGHT ATMOSPHERE
+============================================================
+
+Use the existing Malaysia timezone.
+
+DAY:
+- bright window
+- soft sunlight
+- active cat
+
+EVENING:
+- warm orange glow
+- lamp begins glowing
+- outside becomes warm
+
+NIGHT:
+- moon/stars
+- warm lamp
+- darker cozy room
+- sleepy cat
+- “Good night, {name}”
+
+This is an atmosphere system, NOT generic dark mode.
+
+============================================================
+7. CAT 2.0 — THE THIRD RESIDENT
+============================================================
+
+The cat is not just a mood indicator.
+It is the little resident of the cottage.
+
+Keep existing backend mood logic, pat history, check-in behavior, night state, and deterministic speech.
+
+Replace the visual cat with the supplied JPG mascot.
+
+Existing fixed reaction priority can remain compatible:
+1. recent pat
+2. recent hug/kiss/cuddle/hand
+3. wish completed
+4. unopened letter
+5. both people present
+6. one person present
+7. night and nobody present
+8. quiet/default
+
+Enhance with:
+
+A. POSITION / MOVEMENT
+- window
+- center
+- near a partner
+- near toy
+- sleeping spot
+- mailbox
+- wish box
+
+B. TOY
+Toy must actually do something.
+Click 玩具:
+- yarn ball rolls
+- cat chases / paws it
+- short animation
+- cat returns
+- “抓到了！” / “嘿嘿，再来？”
+
+Cooldown so toy cannot be spammed endlessly.
+A small mood increase is acceptable (+3 to +5) with cooldown.
+
+C. MORE TOYS
+Optional small toy basket:
+- yarn ball
+- toy mouse
+- feather
+- fish toy
+
+Each toy gets a tiny distinct animation.
+Do not build an inventory system.
+
+D. FEED CAT
+Add:
+🍚 喂猫
+
+Behavior:
+- bowl appears
+- cat walks to bowl
+- short eating animation
+- “吃饱啦 ♡”
+- small mood increase with cooldown
+
+E. SLEEP
+Cat can sleep:
+- late at night
+- room is idle
+- Together Mode
+- no activity for some time
+
+F. WINDOW BEHAVIOR
+Cat can sit at the window:
+- morning/day
+- sunset
+- moon/stars at night
+
+G. CAT LOOKS AT PEOPLE
+- one person present → accompanies them
+- both present → sits between/near them
+- romantic interaction → reacts
+
+H. DELIVERY
+For flowers/cookies/little gifts:
+- cat can optionally carry the item across the room
+- item reaches partner
+- this is a visual presentation, not a second gift system
+
+I. FOOTPRINTS
+Cat movement can leave tiny temporary paw prints.
+
+J. CAT MOOD DISPLAY
+Do NOT display numeric “Mood 86/100” prominently.
+Convert it into words:
+- 💗 很开心
+- 😴 有点困
+- 🥺 想被摸摸
+- 🍜 好像饿了
+- ⚡ 精神满满
+
+K. ACCESSORIES
+Very light optional decorations:
+- bow
+- flower
+- scarf
+- bell
+- small hat
+
+Do not make a large outfit/inventory system.
+
+L. CAT CORNER
+Cat page can show:
+- main mascot
+- current feeling
+- toys
+- feed
+- recent little cat moments
+- small cat keepsakes
+
+M. DAILY CAT EVENT
+At most one small deterministic daily event:
+- “猫猫今天一直在窗边睡觉。”
+- “猫猫把毛线球弄到沙发下面了。”
+- “猫猫今天一直跟着嘉怡。”
+
+N. TOY / CAT KEEPSAKES
+Light visual progression:
+- first toy interaction -> yarn ball
+- first flower -> flower decoration
+- first Together Mode -> cozy toy/blanket
+Do not create coins/XP/inventory.
+
+============================================================
+8. COME CLOSER — MAKE IT THE SIGNATURE RELATIONSHIP SYSTEM
+============================================================
+
+Trigger:
+💗 靠近一点
+
+Do not show a boring list of buttons.
+
+Open a beautiful relationship scene/sheet:
+- partner representation
+- soft room dimming
+- tiny hearts
+- floating particles
+- action choices
+
+Keep:
+- 🤗 抱抱
+- 💕 亲亲
+- 🫶 牵手
+- 🥺 贴贴
+- 🌸 送花
+- 🍪 小饼干
+- 💌 留句话
+
+Romantic but tasteful.
+Non-explicit.
+
+Actions:
+HUG:
+- representations move together
+- soft heart
+- “抱住你了 ♡”
+
+KISS:
+- slight approach
+- tiny heart burst
+- “亲了你一下 ♡”
+
+HAND:
+- hands/representations connect
+- “牵着你 ♡”
+
+CUDDLE:
+- side-by-side
+- softer glow
+- “贴贴一下 ♡”
+
+FLOWER:
+- flower travels
+- partner catches
+- “送你一朵花 🌸”
+
+COOKIE:
+- cookie travels
+- partner catches
+- “给你吃一块 🍪”
+
+NOTE:
+- envelope/paper animation
+- short note max 80 chars
+- “留了一句话…”
+
+Rules:
+- cannot target self
+- disabled if no partner is in the room
+- instant local optimistic reaction
+- partner sees synced reaction
+- old interactions are not replayed as live events
+- existing server validation remains
+
+============================================================
+9. LITTLE MOMENTS / 小心意 — NEVER MISS A COUPLE INTERACTION
+============================================================
+
+This is REQUIRED.
+
+Problem:
+The partner may be on another tab, watching YouTube, working, playing a game, or simply away from the site.
+The interaction must not disappear.
+
+Create a lightweight unread interaction system.
+
+If partner is actively looking at the Cottage:
+- show live animation immediately
+
+If partner is not looking:
+- store the interaction as an unread Little Moment
+
+Example:
+💗 有一个小心意给你
+林欣悦亲了你一下 ♡
+
+Little Moments panel:
+- 💕 kiss
+- 🌸 flower
+- 💌 note
+- 🤗 hug
+- 🫶 hand
+- 🍪 cookie
+
+Do NOT let this become a social notification center.
+
+When recipient returns:
+- tiny heart indicator on Cottage/mailbox/appropriate object
+- cat can say:
+  “有人给你留了东西哦…”
+- show unread count only if useful
+- open interaction
+- replay the animation
+
+Do NOT use ugly red social-media badges.
+Use small heart/pink indicators.
+
+Priority:
+HIGH:
+- kiss
+- flower
+- note
+- hug
+
+LOWER / bundleable:
+- hand
+- cuddle
+- cookie
+
+Bundle multiple small interactions:
+“林欣悦今天给了你 3 个小心意 ♡”
+
+Each interaction has:
+- id
+- from
+- to
+- kind
+- note?
+- createdAt
+- seenAt?
+- optional reply
+
+Do not store every tiny interaction as permanent Memory.
+
+Memory defaults:
+- kiss -> memory
+- flower -> memory
+- note -> memory
+- hug/hand/cuddle/cookie -> not permanent by default
+
+Response:
+Recipient can respond with one tap:
+- 💋 亲回来
+- 🤗 抱紧你
+- 🫶 牵住了
+- 🌸 谢谢你
+
+Sender receives a tiny synced reaction.
+
+Optional browser notification:
+- “💕 林欣悦亲了你一下”
+- “🌸 林欣悦送了你一朵花”
+
+Only if notification permission is granted.
+Do not force permission.
+
+============================================================
+10. DRAW 2.0
+============================================================
+
+Exactly 3 visible main jars.
+
+A. 今晚做什么
+- 吃点什么
+- 看什么
+- 玩什么
+- 听什么
+- 出门还是宅家
+- 随机约会
+
+B. 谁来决定
+- 谁选晚餐
+- 谁选电影
+- 谁选游戏
+- 谁选歌
+- 谁安排今天
+- 谁先发消息
+
+C. 来点甜的
+- 抱一下
+- 亲亲
+- 牵手一下
+- 摸摸头
+- 说一句喜欢你的话
+- 互相发一张照片
+
+Each jar:
+- clear icon
+- Chinese label
+- short English subtitle
+- one 抽一下 action
+- reveal animation
+- large result
+
+History:
+- collapsed 最近结果 section
+- not a giant log
+
+Two-person rules:
+- who jar requires 2 real members
+- other jars can work with 1
+- preserve old server draw types for backward compatibility but do not show them as buttons
+
+============================================================
+11. CORNER 2.0
+============================================================
+
+Corner is only:
+“a tiny snapshot of who I am today.”
+
+Visible:
+- name
+- cat form
+- current feeling
+- signature
+- 此刻
+- four favorites
+
+Cat forms:
+- 困困猫
+- 饿饿猫
+- 疯跑猫
+- 贴贴猫
+- 打工猫
+- 做梦猫
+
+Feelings:
+- 很开心
+- 好累
+- 想你
+- 想吃东西
+- 想玩
+- 安静一下
+
+此刻:
+one line only
+
+Favorites:
+- food
+- song
+- game
+- animal
+
+Remove from visible Corner:
+- gender
+- wall
+- objects
+- old six-field pocket presentation
+- gifts
+- large Know Me section
+
+Preserve compatible old data in storage.
+Do not wipe old fields.
+
+Know Me may remain stored and can be exposed later as a shared activity.
+
+Edit via small sheet/drawer.
+
+============================================================
+12. CALENDAR 2.0 — OUR DAYS
+============================================================
+
+Turn Calendar into:
+“我们的日历 / Our Days”
+
+MONTH VIEW:
+- month header
+- previous/next month
+- Today button
+- current Malaysia date highlighted
+- event dots/icons
+- multiple-event indicator
+
+Event icons:
+🍜 晚餐
+🎬 电影
+🎮 游戏
+📞 通话
+🎂 生日
+💕 约会
+✨ 自定义
+
+UPCOMING:
+Top area:
+“下一次约会 / Next Date”
+- nearest event
+- date
+- title
+- type
+- countdown
+- “今天” when applicable
+
+EVENT SHEET:
+Click event:
+- title
+- date
+- type
+- optional note
+- edit
+- delete/remove
+- mark complete
+
+DATE COMPLETION:
+“💕 这次约会完成啦”
+Optional:
+- create Memory
+- tiny cottage celebration
+
+Do not make it a corporate scheduler.
+
+DATE PLANNER:
+“＋ 计划一次约会”
+Types:
+- 吃饭
+- 看电影
+- 打游戏
+- 出门走走
+- 在家约会
+- 通话
+- 自定义
+
+The planner saves into the same Calendar system.
+Do not create a second calendar.
+
+============================================================
+13. TODAY 2.0 — DAILY COUPLE RITUAL
+============================================================
+
+Today should have 3 compact areas:
+
+A. 💭 今日问题
+Existing date-based prompt.
+
+B. 💗 今日一句
+Each person writes one short sentence.
+
+C. 🌸 今日小约定
+A tiny shared action:
+- 一起听一首歌
+- 今晚一起聊天
+- 发一张照片
+- 一起看一会儿
+
+After both answer:
+- reveal both
+- nice result state
+
+This should feel like a daily ritual, not a quiz.
+
+============================================================
+14. CHAT 2.0
+============================================================
+
+Keep shared chat and existing limits/storage.
+
+Make it feel like:
+“I left something for you in our cottage.”
+
+Improve:
+- softer message bubbles
+- tiny heart when partner message arrives
+- optional quick phrases
+- better empty state
+
+Quick phrase examples:
+- “我想你了。”
+- “辛苦啦。”
+- “晚安。”
+- “等等我。”
+- “吃饭了吗？”
+
+Do NOT make a full Messenger clone.
+
+============================================================
+15. Q&A 2.0
+============================================================
+
+Existing:
+ask -> other answers -> history.
+
+Improve organization:
+
+A. 💭 问问我
+normal questions
+
+B. 💗 问问我们
+couple prompts such as:
+- 如果明天一起旅行，你想去哪？
+- 你最喜欢我们什么时候待在一起？
+- 哪一次我让你觉得很开心？
+- 如果今晚只有 RM30，你想怎么约会？
+
+Then reveal both answers beautifully.
+
+Keep existing answer restrictions and limits.
+
+============================================================
+16. LETTERS 2.0
+============================================================
+
+Keep:
+- sender cannot open own letter
+- other person opens
+- openedAt/openedBy
+- last 12
+
+Presentation:
+physical mailbox/envelope
+
+New letter:
+📬 mailbox animation
+“有一封信给你”
+
+Open:
+- envelope animation
+- paper letter
+- sender
+- time
+
+After open:
+“已读”
+with time
+
+No separate social feed.
+
+============================================================
+17. WISHLIST 2.0
+============================================================
+
+Split visual presentation:
+
+🌷 我的愿望
+Personal wishes.
+
+💕 我们想做
+Shared couple ideas.
+
+Shared “things to do together” can include:
+- 一起看日落
+- 一起吃火锅
+- 去没去过的店
+- 一起玩 Roblox
+- 看一部老电影
+- 拍一张合照
+- 散步
+- 熬夜聊天
+- 做一顿饭
+- 去逛街
+
+Add:
+- random idea
+- mark done
+- complete -> optional Memory
+
+Do NOT create a second huge Wishlist system.
+Reuse the existing Wishlist infrastructure or visually separate within the same page.
+
+============================================================
+18. MEMORIES 2.0 — OUR STORY
+============================================================
+
+Keep existing real-action memory generation and route linking.
+
+Redesign into scrapbook.
+
+Top:
+featured memory
+
+Examples:
+- first chat
+- first letter
+- first kiss
+- first flower
+- cat reached 100
+- first date
+- first game match
+- completed wish
+
+Rest:
+dated cards with small marks/icons.
+
+Do NOT record every poll or tiny interaction.
+
+Possible permanent memories:
+- first chat
+- first letter
+- first kiss
+- first flower
+- first date
+- date completed
+- important game completion
+- completed wish
+- cat at 100
+- first time entering cottage
+
+============================================================
+19. MILESTONES — LIGHT, NOT GAMIFIED
+============================================================
+
+Optional milestone layer:
+“第一次”
+- first chat
+- first letter
+- first date
+- first kiss
+- first game
+- first completed wish
+
+“我们”
+- 3-day shared visit streak
+- 7-day streak
+- 5 completed wishes
+- 10 letters
+
+Do NOT show XP/levels/coins.
+These are memories, not competition.
+
+============================================================
+20. TOGETHER MODE
+============================================================
+
+Create:
+🕯 一起待一会儿
+Just Stay Together
+
+Choose:
+- 15 minutes
+- 30 minutes
+- 60 minutes
+
+Both enter shared mode.
+
+Visual:
+- cozy room
+- lamp
+- stars/night
+- cat resting
+- subtle ambient motion
+
+Show:
+“你和嘉怡正在一起待着”
+
+Timer:
+“18:42”
+
+Optional tiny interactions:
+- pat cat
+- heart
+- hold hands
+- cuddle
+
+No tasks.
+No score.
+No XP.
+
+At end:
+“你们一起待了 30 分钟 ♡”
+
+Create optional small memory if appropriate.
+
+Cat changes state during Together Mode.
+
+============================================================
+21. DATING / COUPLE EXTRA FEATURES
+============================================================
+
+Keep these as compact systems, not huge pages.
+
+A. DATE IDEA JAR
+Shared pool:
+🫙 我们想一起做的事
+
+- add idea
+- remove idea
+- mark done
+- random pick
+
+B. DAILY COUPLE MOMENT
+One shared daily prompt.
+
+C. COMPLIMENT EXCHANGE
+💌 夸夸我
+One short compliment per person per day.
+Examples:
+- 今天的你很可爱。
+- 谢谢你陪我。
+- 你辛苦了。
+- 我喜欢你认真做事的样子。
+
+D. SURPRISE ENVELOPE
+Optional:
+- random sweet prompt
+- only one reveal
+- warm visual presentation
+
+E. ANNIVERSARY / IMPORTANT DATES
+Keep as optional future-friendly support if the existing calendar architecture can support it.
+
+============================================================
+22. GAME HUB — 🎮 OUR CONSOLE CORNER
+============================================================
+
+Create:
+ /room/[room]/games
+
+The main visual/icon must be:
+🎮 game console/controller
+
+In the Cottage:
+a physical game console/controller object:
+🎮 游戏
+“一起玩一下”
+
+State:
+idle:
+🎮 游戏
+
+waiting:
+🎮 + tiny heart/pink indicator
+“有一局等你”
+
+active:
+🎮 soft glow
+“正在一起玩”
+
+Do NOT add another permanent mobile bottom-nav tab.
+
+Desktop sidebar can include 游戏.
+
+============================================================
+23. GAME HUB UI
+============================================================
+
+Header:
+🎮 一起玩
+Play Together
+
+Subtitle:
+“选一个小游戏，陪我玩一下 ♡”
+
+Top controls:
+- 🎲 随机一局
+- ▶ 继续上一局
+
+Do NOT show a giant grid of every game.
+
+Show featured games first.
+Then small categories.
+
+Categories:
+
+⚡ 快速对战
+- ✊✋✌️ 石头剪刀布
+- ❌⭕ 井字棋
+- 🔤 猜词
+
+💗 情侣小游戏
+- 💗 你了解我吗？
+- 🫶 一起做决定
+- 💕 甜甜快问快答
+- 😂 谁比较像
+- 🎁 礼物猜猜看
+- 💌 秘密信封
+
+🧠 默契与思考
+- 🎯 Couple Bingo
+
+🐱 小屋游戏
+- 🐱 陪猫玩
+- 🕯 一起待一会儿
+
+The Game Hub is not a game store.
+
+============================================================
+24. GAME #1 — ROCK PAPER SCISSORS
+============================================================
+
+Game:
+✊✋✌️ 石头剪刀布
+Rock Paper Scissors
+
+Rules:
+- 2 real members required
+- default best-of-3
+- optional single round
+- each player chooses privately
+- selection stays hidden until locked
+- reveal simultaneously
+- prevent changing choice after lock
+
+Choice buttons:
+- ✊ 石头
+- ✋ 剪刀
+- ✌️ 布
+
+UI state:
+Player A:
+“等待嘉怡选择…”
+
+Partner:
+“等待林欣悦选择…”
+
+When both lock:
+brief reveal animation
+
+Result:
+- win
+- lose
+- draw
+
+Copy examples:
+“你出了石头”
+“嘉怡出了剪刀”
+“赢啦 ♡”
+
+“平手！”
+
+Match panel:
+- round 1
+- round 2
+- round 3
+- small score
+- no leaderboard
+
+After match:
+“再来一次”
+“回到游戏厅”
+
+Do not permanently store every round.
+Optional single memory:
+“我们玩了一局石头剪刀布。”
+
+============================================================
+25. GAME #2 — TIC-TAC-TOE / 井字棋
+============================================================
+
+Game:
+❌⭕ 井字棋
+
+Requirements:
+- shared 3x3 board
+- 2 real members
+- one symbol each
+- clear current turn
+- only current player can act
+- server validates move
+- board syncs between devices
+- prevent duplicate simultaneous move
+- detect win
+- detect draw
+- restart
+
+Visual:
+- warm paper board
+- subtle grid
+- hand-drawn feel
+- X/O are soft illustrated marks
+- win line animation
+
+Top:
+“轮到嘉怡”
+or
+“轮到你”
+
+Finished:
+“嘉怡赢啦 ♡”
+“平手！”
+
+Buttons:
+- 再来一局
+- 回到游戏厅
+
+Optional first-to-3 match:
+Use only if implementation is clean.
+Do not turn into rankings/statistics.
+
+Game state must persist while unfinished.
+
+============================================================
+26. GAME #3 — WORD GUESSING / 猜词
+============================================================
+
+Game:
+🔤 猜词
+
+Primary mode:
+One player gets a secret word.
+The other guesses.
+
+Turn flow:
+1. assign clue giver
+2. show secret word ONLY to clue giver
+3. other player sees guessing screen
+4. clue giver can give a short clue
+5. guesser submits guess
+6. game evaluates
+7. success/failure
+8. optional next round
+
+Categories:
+- 我们
+- 食物
+- 动物
+- 游戏
+- 约会
+- 随机
+
+Word pool examples:
+- 猫
+- 火锅
+- 电影
+- 抱抱
+- Roblox
+- 月亮
+- 生日
+- 花
+- 奶茶
+
+Rules:
+- 5–8 guesses depending on selected mode
+- no exposing secret word to the guesser
+- no sending secret word through shared room state in a way the wrong client can accidentally render
+- server validation must enforce turn/roles
+
+Result:
+“猜到了 ♡”
+or
+“差一点！”
+
+Next:
+“换一个词”
+
+Optional future:
+use Corner favorites as word sources.
+Only add this after core game is stable.
+
+============================================================
+27. GAME #4 — COUPLE BINGO
+============================================================
+
+Game:
+🎯 Bingo
+
+This is a shared couple Bingo, NOT gambling.
+
+Board:
+- 3x3 default
+- optional 4x4 later
+
+Themes:
+A. 今日情侣 Bingo
+B. Date Night Bingo
+C. Cozy Bingo
+
+Examples:
+- 今天一起聊天
+- 一起笑了
+- 一起吃东西
+- 发了一张照片
+- 说了“想你”
+- 一起玩游戏
+- 抱抱
+- 亲亲
+- 一起待着
+
+Marking:
+- shared board
+- either player may mark a square
+- prevent duplicate action/race conflicts
+- each square can optionally require a simple confirmation
+
+Completion:
+- line completion
+- full-board completion
+
+Result:
+“Bingo! 今天的小屋完成啦 ♡”
+
+Optional:
+completed board -> Memory
+
+No gambling.
+No money.
+No XP.
+No leaderboard.
+
+============================================================
+28. GAME #5 — 你了解我吗？
+============================================================
+
+This is a core relationship game.
+
+Both people answer privately.
+
+Question examples:
+- 嘉怡现在最想吃什么？
+- 如果我们明天旅行，你觉得我会选哪里？
+- 我压力大的时候更想要什么？
+- 我最喜欢什么颜色？
+- 我最想收到什么礼物？
+- 我更喜欢抱抱还是牵手？
+
+Flow:
+- question
+- both privately choose/write
+- reveal simultaneously
+- match animation
+- “猜中了 ♡”
+- “差一点点！”
+
+Categories:
+- 轻松
+- 甜甜
+- 深一点
+- 随机
+
+Do not make it competitive.
+Show:
+“今天你们有 7 个答案很接近”
+rather than a winner.
+
+Can reuse Corner favorites as safe question sources.
+
+============================================================
+29. GAME #6 — 一起做决定
+============================================================
+
+Cooperative secret-choice game.
+
+Both privately choose the same question:
+“今晚吃什么？”
+
+Choices:
+- 火锅
+- 拉面
+- Pizza
+- 马来餐
+
+Reveal simultaneously.
+
+If same:
+“完全同步！ ♡”
+
+If different:
+“意见不一样也没关系 ♡”
+Then offer:
+“抽一个折中方案”
+
+Use for:
+- food
+- movie
+- date
+- weekend
+- drink
+- game
+- where to go
+
+This is cooperation, not competition.
+
+============================================================
+30. GAME #7 — 甜甜快问快答
+============================================================
+
+60-second mode.
+
+- one question at a time
+- 5–8 seconds to answer
+- 5–10 questions
+- answers revealed after timer
+- compare similarity
+
+Examples:
+- 现在最想和我去哪？
+- 今天最想吃什么？
+- 如果现在见面第一件事做什么？
+- 今天最想让我对你说什么？
+
+End:
+“今天你们很有默契 ♡”
+
+No score or ranking.
+
+============================================================
+31. GAME #8 — 谁比较像
+============================================================
+
+Prompt:
+“谁比较容易熬夜？”
+
+Both privately select:
+- 嘉怡
+- 你
+
+Examples:
+- 谁比较容易熬夜？
+- 谁更爱吃东西？
+- 谁比较会迟到？
+- 谁更喜欢猫？
+- 谁更容易想太多？
+- 谁更可能先道歉？
+- 谁比较黏人？
+
+Reveal simultaneously.
+No winner.
+Result text:
+“你们的答案很有意思 😂”
+
+============================================================
+32. GAME #9 — 礼物猜猜看
+============================================================
+
+One player secretly chooses a category/item.
+Other player guesses.
+
+Categories:
+- food
+- animal
+- color
+- movie
+- game
+- place
+- gift
+- activity
+
+Flow:
+- hidden choice
+- optional clue
+- guesses
+- optional second clue
+- reveal
+
+Result:
+“🎁 猜到了！”
+or
+“再给你一个提示…”
+
+============================================================
+33. GAME #10 — 秘密信封
+============================================================
+
+An envelope appears.
+
+Prompt examples:
+- 给对方说一句只有今天可以说的话
+- 如果现在见面，你第一句话会是什么？
+- 今天最想谢谢对方什么？
+- 今天最想给对方一个什么拥抱？
+
+Both write privately.
+
+Then:
+3...2...1...
+Open together.
+
+Both messages reveal.
+
+Themes:
+- 🌸 Sweet
+- 🌙 Night
+- 😂 Funny
+- 💗 Romantic
+- 🫶 Comfort
+
+This can connect to Letters/Little Moments but must not create a giant new messaging system.
+
+============================================================
+34. GAME #11 — 陪猫玩
+============================================================
+
+A cooperative cat activity.
+
+Both players interact with the same toy/cat.
+
+Possible mode:
+- one controls toy direction
+- other helps cat chase
+OR
+- alternate tapping the toy
+
+Goal:
+catch toy 5 times.
+
+Cat reactions:
+- miss
+- almost
+- catch
+- happy
+
+End:
+“抓到了！🐱”
+
+Increase cat mood lightly with cooldown.
+Do not make it an endless grinding system.
+
+============================================================
+35. GAME #12 — 一起待一会儿
+============================================================
+
+This is the shared cozy activity.
+
+Use as:
+🕯 Together Mode
+
+Durations:
+- 5 minutes
+- 10 minutes
+- 15 minutes
+- optional 30 minutes later
+
+Room becomes:
+- calmer
+- lamp glow
+- cat resting
+- slow stars/particles
+
+Show:
+“你和嘉怡正在一起待着”
+
+Small actions:
+- heart
+- cat pat
+- hand-hold
+- cuddle
+
+No score.
+No task.
+No XP.
+
+At end:
+“你们一起待了 10 分钟 ♡”
+
+============================================================
+36. GAME HUB — ASYNC SUPPORT
+============================================================
+
+Games must survive when one person leaves.
+
+If game is unfinished:
+- save compact state
+- show “继续上一局”
+- show whose turn it is
+- show “等嘉怡回来”
+- do not reset
+- reopen in same state
+
+If one person starts a game while the partner is away:
+Little Moment:
+🎮 “林欣悦邀请你玩一局：井字棋”
+
+When partner returns:
+🎮 object shows small heart
+“有一局等你 ♡”
+
+If both return later:
+the Game Hub has:
+“继续上一局”
+
+This is REQUIRED for:
+- RPS
+- Tic-Tac-Toe
+- Word Guessing
+- Bingo
+- relationship mini-games
+
+============================================================
+37. GAME STATE — TECHNICAL
+============================================================
+
+Extend existing shared room state safely.
+
+Suggested:
+Room:
+games: {
+  activeGames: GameSession[],
+  recentGames: GameHistory[]
+}
+
+GameSession:
+{
+  id,
+  roomId,
+  gameType,
+  players,
+  status,
+  turn,
+  state,
+  createdAt,
+  updatedAt,
+  lastActionBy,
+  winner?
+}
+
+Do not put an entire Room snapshot inside game state.
+
+Use compact state.
+
+Server must validate:
+- room membership
+- correct player
+- correct turn
+- legal move
+- game completion
+- no self-play
+- no duplicate action
+- no illegal state change
+
+For simultaneous games:
+- each player's choice stored privately server-side
+- reveal only after both choices are locked
+
+For turn games:
+- only current player can move
+
+For Bingo:
+- shared square state merged safely
+
+Preserve:
+- merge
+- restore
+- polling
+- optimistic UI
+- race protection
+
+============================================================
+38. LITTLE MOMENTS + GAMES
+============================================================
+
+Game invite can create a Little Moment.
+
+Game completion can optionally create a Memory.
+
+Do NOT create memory from every move.
+
+Examples:
+- “我们玩了一局井字棋”
+- “今天完成了情侣 Bingo”
+- “我们第一次玩石头剪刀布”
+
+============================================================
+39. GAME ACCESSIBILITY
+============================================================
+
+All games:
+- keyboard navigable where possible
+- visible focus
+- clear state
+- readable text
+- touch-friendly
+- reduced motion
+- no hover-only behavior
+
+Boards:
+- buttons, not div click targets
+
+Announce turn changes/status for screen readers where appropriate.
+
+============================================================
+40. GAME VISUAL QUALITY
+============================================================
+
+Game UI should feel like part of the Cottage:
+- same cream/blush/rose palette
+- soft paper surfaces
+- hand-drawn accents
+- warm shadows
+- gentle animations
+
+Not:
+- esports
+- arcade neon
+- gamer dashboard
+- Steam clone
+
+The console icon should be the recognizable gateway.
+
+============================================================
+41. FINAL COUPLE-EXPERIENCE LOOP
+============================================================
+
+The redesigned product should form this loop:
+
+PLAN
+→ Calendar / Date Planner / Draw
+
+SPEND TIME
+→ Chat / Games / Together Mode / Date
+
+INTERACT
+→ Come Closer / Little Moments / Cat
+
+LEARN EACH OTHER
+→ Q&A / Today / Relationship Games / Corner
+
+REMEMBER
+→ Memories / Milestones / Calendar completion
+
+RETURN
+→ Cottage / Cat / Little Moments / pending games
+
+This is what makes the website feel like a place you return to, not a tool you use once.
+
+============================================================
+42. IMPLEMENTATION ORDER
+============================================================
+
+STEP 1
+Inspect repository and existing project-brief.md.
+
+STEP 2
+Identify current:
+- CottageRoom
+- RoomShell
+- Sidebar
+- BottomNav
+- CatMascot
+- Calendar
+- Today
+- Chat
+- Q&A
+- Wishlist
+- Letter
+- Memories
+- Corner
+- Draw
+- ComeCloser
+- store/types/constants/use-room/backup
+- current game code if any
+
+STEP 3
+Replace cat asset and integrate mascot safely.
+
+STEP 4
+Finish Cottage 2.0 and cat behaviors.
+
+STEP 5
+Finish Come Closer + Little Moments.
+
+STEP 6
+Finish Calendar 2.0 + Date Planner + Date History.
+
+STEP 7
+Finish Today 2.0 / daily couple ritual.
+
+STEP 8
+Finish Chat / Q&A / Letter / Wishlist / Memories polish.
+
+STEP 9
+Finish Game Hub UI and console object.
+
+STEP 10
+Implement ALL approved games:
+1. RPS
+2. Tic-Tac-Toe
+3. Word Guessing
+4. Bingo
+5. Do You Know Me
+6. Together Decision
+7. Sweet Quick Questions
+8. Who Is More Like
+9. Gift Guessing
+10. Secret Envelope
+11. Cat Play
+12. Together Mode
+
+STEP 11
+Implement async resume and Little Moment game invites.
+
+STEP 12
+Accessibility + responsive polish.
+
+STEP 13
+Run:
+- npm install if needed
+- npm run build
+- npm start / local production test
+
+STEP 14
+Test mobile and laptop layouts.
+
+STEP 15
+Fix every TypeScript/build/runtime issue.
+
+DO NOT STOP AT A PLAN.
+DO NOT CREATE STATIC MOCKUPS ONLY.
+ACTUALLY MODIFY THE CODEBASE.
+
+============================================================
+43. ACCEPTANCE CHECKLIST
+============================================================
+
+COTTAGE:
+[ ] looks like a room
+[ ] phone and laptop both intentional
+[ ] objects have purpose
+[ ] console object exists
+[ ] cat uses supplied mascot
+
+CAT:
+[ ] JPG mascot is used
+[ ] toy works
+[ ] feed works
+[ ] sleep state works
+[ ] window behavior works
+[ ] cat follows/looks at people
+[ ] cat reacts to couple interaction
+[ ] cat can carry small gifts visually
+[ ] cat page is useful
+[ ] no numeric mood UI dominating
+
+COME CLOSER:
+[ ] hug
+[ ] kiss
+[ ] hand
+[ ] cuddle
+[ ] flower
+[ ] cookie
+[ ] note
+[ ] local instant feedback
+[ ] partner synced reaction
+[ ] self-target blocked
+
+LITTLE MOMENTS:
+[ ] missed interactions are saved
+[ ] unread state works
+[ ] return-to-site reveal works
+[ ] optional response works
+[ ] no spammy notification system
+[ ] optional browser notifications
+[ ] timestamps use Malaysia time
+
+DRAW:
+[ ] exactly 3 visible jars
+[ ] no giant old list
+[ ] reveal animation
+[ ] history collapsed
+
+CALENDAR:
+[ ] month navigation
+[ ] today
+[ ] event icons
+[ ] next date
+[ ] countdown
+[ ] event detail
+[ ] date planner
+[ ] mark complete
+[ ] memory connection
+
+TODAY:
+[ ] daily question
+[ ] today's line
+[ ] small shared promise
+[ ] both-answer reveal
+
+CHAT:
+[ ] warm bubbles
+[ ] quick phrases
+[ ] instant local response
+
+Q&A:
+[ ] normal questions
+[ ] couple questions
+[ ] answer/reveal
+
+LETTERS:
+[ ] mailbox presentation
+[ ] envelope opening
+[ ] unread/opened state
+
+WISHLIST:
+[ ] personal wishes
+[ ] shared things-to-do
+[ ] random idea
+
+MEMORIES:
+[ ] scrapbook
+[ ] featured memories
+[ ] meaningful only
+[ ] date/game/couple milestones
+
+TOGETHER MODE:
+[ ] 5/10/15 min
+[ ] shared visual
+[ ] cat included
+[ ] no score
+[ ] end state
+
+GAMES:
+[ ] Game Hub route
+[ ] console icon/object
+[ ] Fast Play category
+[ ] Couple Games category
+[ ] Together & Think category
+[ ] Cozy Games category
+[ ] random game
+[ ] resume game
+[ ] async support
+[ ] Little Moment invite
+[ ] RPS works
+[ ] Tic-Tac-Toe works
+[ ] Word Guessing works
+[ ] Bingo works
+[ ] Do You Know Me works
+[ ] Together Decision works
+[ ] Sweet Quick Questions works
+[ ] Who Is More Like works
+[ ] Gift Guessing works
+[ ] Secret Envelope works
+[ ] Cat Play works
+[ ] Together Mode works
+
+SYNC:
+[ ] two real members only
+[ ] no fake person
+[ ] merge/restore preserved
+[ ] polling cannot overwrite fresh writes
+[ ] unfinished games persist
+[ ] Malaysia timezone preserved
+
+RESPONSIVE:
+[ ] phone
+[ ] laptop
+[ ] 1200px+ desktop
+[ ] no horizontal overflow
+[ ] focus states
+[ ] reduced motion
+[ ] touch friendly
+
+BUILD:
+[ ] npm run build passes
+[ ] webpack build remains
+[ ] no TypeScript errors
+[ ] no console-critical runtime errors
+
+ASSET CHECK:
+[ ] public/assets/cat/cat-idle.jpg exists
+[ ] public/assets/cat/cat-happy.jpg exists
+[ ] public/assets/cat/cat-sleepy.jpg exists
+[ ] public/assets/cat/cat-playing.jpg exists
+[ ] public/assets/cat/cat-eating.jpg exists
+[ ] public/assets/cat/cat-window.jpg exists
+[ ] public/assets/cat/cat-surprised.jpg exists
+[ ] every asset is used by the correct runtime state
+[ ] old main cat artwork is no longer used
+
+============================================================
+44. FINAL QUALITY TEST
+============================================================
+
+Before finishing, ask:
+
+“Would Jia Yi open this after work and actually want to stay here with me?”
+
+The answer should come from the design and behavior, not from adding more buttons.
+
+The result should feel like:
+🏠 our home
+🐱 our cat
+💗 our little moments
+🎮 our games
+📅 our dates
+📖 our story
+
+NOT:
+“a website with 30 features.”
+
+Keep the product cohesive.
+Use the same visual language everywhere.
+Make every feature feel like it belongs to the same little cottage.

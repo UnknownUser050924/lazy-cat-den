@@ -25,6 +25,20 @@
 html,
 body {
   min-height: 100%;
+  overflow-x: hidden;
+  background: var(--cream);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--rose-deep);
+  outline-offset: 3px;
+}
+
+html[data-sky="evening"] body {
+  background:
+    radial-gradient(900px 420px at 80% -10%, #f0c7a0 0%, transparent 55%),
+    #f3e2d4;
 }
 
 html[data-sky="night"] body {
@@ -111,4 +125,159 @@ html[data-sky="night"] .stars {
 
 .pop-in {
   animation: pop 0.35s ease both;
+}
+
+@keyframes heart-rise {
+  0% {
+    transform: translateY(24px) scale(0.9);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-36px) scale(1);
+    opacity: 0;
+  }
+}
+
+.heart-float {
+  animation: heart-rise 2.2s ease forwards;
+}
+
+.cottage-scene {
+  background:
+    linear-gradient(180deg, rgba(255, 244, 214, 0.9), transparent 38%),
+    linear-gradient(180deg, #f6d7c8 0%, #fbf6f0 48%, #f3e0d4 100%);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 -40px 50px rgba(195, 107, 118, 0.08);
+}
+
+html[data-sky="evening"] .cottage-scene {
+  background:
+    linear-gradient(180deg, #f0c7a0 0%, #e7b7a2 36%, #f6e4d8 100%);
+}
+
+html[data-sky="night"] .cottage-scene {
+  background:
+    radial-gradient(circle at 78% 16%, #f4e2b0 0 7px, transparent 8px),
+    linear-gradient(180deg, #241c33 0%, #3a3034 42%, #4d3b36 100%);
+  color: #f6ebe6;
+}
+
+.cottage-window {
+  display: grid;
+  width: 7.5rem;
+  height: 5.25rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  padding: 0.45rem 0.45rem 0.55rem;
+  border-radius: 1.35rem 1.35rem 0.35rem 0.35rem;
+  border: 3px solid #f3e6d8;
+  background: #f7efe6;
+  box-shadow: 0 0.45rem 0 #e7d3c4;
+}
+
+.cottage-window span {
+  border-radius: 0.2rem;
+  background: linear-gradient(#fff4c8, #b9ddf4);
+}
+
+.cottage-window span:nth-child(1) {
+  border-radius: 0.9rem 0.2rem 0.2rem 0.2rem;
+}
+
+.cottage-window span:nth-child(2) {
+  border-radius: 0.2rem 0.9rem 0.2rem 0.2rem;
+}
+
+html[data-sky="evening"] .cottage-window span {
+  background: linear-gradient(#f8d48a, #e08a78);
+}
+
+html[data-sky="night"] .cottage-window {
+  border-color: #6a5560;
+  background: #3a3036;
+  box-shadow: 0 0.45rem 0 #2a2228;
+}
+
+html[data-sky="night"] .cottage-window span {
+  background:
+    radial-gradient(circle at 30% 35%, #fff 0 1.5px, transparent 2px),
+    linear-gradient(#1b2438, #31425f);
+}
+
+.cottage-lamp {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: #f8e1b0;
+  box-shadow: 0 0 0 0 transparent;
+}
+
+html[data-sky="evening"] .cottage-lamp,
+html[data-sky="night"] .cottage-lamp {
+  background: #ffd78a;
+  box-shadow: 0 0 18px 8px rgba(255, 196, 120, 0.55);
+}
+
+.cat-spot-window {
+  transform: translateX(12%);
+}
+
+.cat-spot-person {
+  transform: translateX(-8%);
+}
+
+.cat-spot-sleep {
+  transform: translateY(6px);
+}
+
+.cat-stage {
+  display: grid;
+  place-items: center;
+  background: transparent;
+}
+
+.cat-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.room-object {
+  display: flex;
+  min-width: 4.5rem;
+  min-height: 4.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  border-radius: 1.3rem;
+  padding: 0.55rem 0.7rem;
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+  border: 1px solid var(--line);
+  color: inherit;
+  text-align: center;
+}
+
+.room-object:active {
+  transform: translateY(1px);
+}
+
+.room-object-live {
+  box-shadow: 0 0 0 3px rgba(195, 107, 118, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floaty,
+  .wiggle,
+  .pop-in,
+  .heart-float,
+  .cat-spot-window,
+  .cat-spot-person,
+  .cat-spot-sleep {
+    animation: none !important;
+    transform: none !important;
+  }
 }

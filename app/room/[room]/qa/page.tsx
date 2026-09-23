@@ -18,7 +18,7 @@ export default function QAPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-xl space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">问答 Q&A</h1>
         <p className="text-sm text-muted">问一件小事，留给对方慢慢答</p>

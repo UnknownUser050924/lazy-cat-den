@@ -20,13 +20,28 @@ const PLACE: Record<string, string> = {
   "first-chat": "chat",
   chat: "chat",
   wish: "wishlist",
+  "wish-done": "wishlist",
   "cat-100": "cat",
   pat: "cat",
-  gift: "corner",
+  gift: "",
   pocket: "corner",
   know: "corner",
   today: "today",
   event: "calendar",
+};
+
+const MARK: Record<string, string> = {
+  joined: "门",
+  "first-chat": "话",
+  "first-letter": "信",
+  "first-draw": "签",
+  "cat-100": "猫",
+  "wish-done": "愿",
+  gift: "心",
+  letter: "信",
+  draw: "签",
+  pat: "猫",
+  event: "历",
 };
 
 function memoryHref(roomId: string, memory: Memory) {
@@ -39,21 +54,33 @@ export default function MemoriesPage() {
   const { room, roomId } = useRoomContext();
   if (!room) return <p className="text-center text-muted">翻开故事…</p>;
 
+  const featured = room.memories.find((memory) =>
+    ["first-chat", "first-letter", "cat-100", "wish-done", "joined"].includes(memory.kind),
+  );
+
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-3xl space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">我们的小故事</h1>
-        <p className="text-sm text-muted">点一下，就会走到那一页</p>
+        <p className="text-sm text-muted">Our little story</p>
       </header>
+      {featured ? (
+        <Link href={memoryHref(roomId, featured)} className="block rounded-[28px] bg-blush px-5 py-5">
+          <p className="text-xs font-bold tracking-[0.16em] text-rose">FEATURED</p>
+          <p className="mt-2 text-xl font-extrabold">{featured.titleZh}</p>
+          <p className="mt-1 text-xs text-muted">{formatTime(featured.createdAt)}</p>
+        </Link>
+      ) : null}
       {room.memories.length === 0 ? <p className="text-sm text-muted">故事会在你们使用小屋时自己长出来。</p> : null}
-      <ol className="space-y-3">
+      <ol className="grid gap-3 sm:grid-cols-2">
         {room.memories.map((memory) => (
           <li key={memory.id}>
-            <Link href={memoryHref(roomId, memory)} className="card block rounded-2xl px-4 py-3">
-              <p className="font-bold">{memory.titleZh}</p>
-              <p className="text-xs text-muted">
-                {memory.titleEn}
-                {memory.actor ? ` · ${memory.actor}` : ""} · {formatTime(memory.createdAt)}
+            <Link href={memoryHref(roomId, memory)} className="card block h-full rounded-[24px] px-4 py-3">
+              <p className="text-xs text-rose">{MARK[memory.kind] ?? "记"}</p>
+              <p className="mt-1 font-bold">{memory.titleZh}</p>
+              <p className="mt-1 text-xs text-muted">
+                {formatTime(memory.createdAt)}
+                {memory.actor ? ` · ${memory.actor}` : ""}
               </p>
             </Link>
           </li>

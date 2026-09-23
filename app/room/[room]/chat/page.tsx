@@ -6,6 +6,8 @@ import { formatTime, useRoomContext } from "@/components/RoomShell";
 export default function ChatPage() {
   const { room, displayName, act, busy, error } = useRoomContext();
   const [text, setText] = useState("");
+  const [heart, setHeart] = useState(false);
+  const seen = useRef<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const count = room?.messages.length ?? 0;
   const latest = room?.messages[0]?.id;
@@ -13,6 +15,18 @@ export default function ChatPage() {
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [count, latest]);
+
+  useEffect(() => {
+    const newest = room?.messages[0];
+    if (!newest) return;
+    if (seen.current && seen.current !== newest.id && newest.author !== displayName) {
+      setHeart(true);
+      const timer = setTimeout(() => setHeart(false), 1600);
+      seen.current = newest.id;
+      return () => clearTimeout(timer);
+    }
+    seen.current = newest.id;
+  }, [displayName, room?.messages]);
 
   if (!room) return <p className="text-center text-muted">铺开垫子…</p>;
 
@@ -27,11 +41,12 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex min-h-[70dvh] flex-col">
+    <div className="mx-auto flex min-h-[70dvh] w-full max-w-xl flex-col">
       <header>
-        <h1 className="text-2xl font-extrabold">聊天 Chat</h1>
-        <p className="text-sm text-muted">说一句，对方一会儿就能看到</p>
+        <h1 className="text-2xl font-extrabold">聊天</h1>
+        <p className="text-sm text-muted">留在小屋里的话</p>
       </header>
+      {heart ? <p className="heart-float mt-2 text-sm text-rose" aria-live="polite">♡ 对方留了一句</p> : null}
 
       <div className="mt-4 flex flex-1 flex-col gap-2">
         {messages.length === 0 ? (
@@ -43,7 +58,7 @@ export default function ChatPage() {
               <div key={item.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[80%] rounded-[22px] px-4 py-2 ${
-                    mine ? "bg-rose-deep text-white" : "card"
+                    mine ? "bg-[color-mix(in_srgb,var(--rose)_82%,white)] text-white" : "bg-card text-ink shadow-sm"
                   }`}
                 >
                   <p className={`text-[11px] ${mine ? "text-white/80" : "text-muted"}`}>
@@ -60,7 +75,7 @@ export default function ChatPage() {
 
       {error ? <p className="mt-3 text-sm text-rose-deep">{error}</p> : null}
 
-      <form onSubmit={send} className="sticky bottom-24 mt-4 flex gap-2">
+      <form onSubmit={send} className="sticky bottom-24 mt-4 flex gap-2 md:bottom-0">
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}

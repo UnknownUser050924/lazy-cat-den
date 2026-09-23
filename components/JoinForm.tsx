@@ -84,7 +84,7 @@ export function JoinForm({
         </p>
       </div>
       <div className="mt-2">
-        <CatMascot mood={86} size={210} />
+        <CatMascot pose="idle" size={210} />
       </div>
       {joined ? (
         <p className="mt-4 text-center text-sm font-bold text-rose-deep">{joined} 已经在小屋里</p>

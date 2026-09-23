@@ -18,7 +18,7 @@ export default function LetterPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-xl space-y-5">
       <header>
         <h1 className="text-2xl font-extrabold">给你的信</h1>
         <p className="text-sm text-muted">一张只给对方看的小纸条</p>

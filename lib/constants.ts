@@ -182,13 +182,54 @@ export const KNOW_PROMPTS = [
   { id: "happy", zh: "什么会让你开心？", en: "What makes you happy" },
 ] as const;
 
-export const GIFT_KINDS = [
-  { id: "hug", zh: "抱了一下", en: "Hug" },
-  { id: "pat", zh: "摸了摸", en: "Pat" },
-  { id: "flower", zh: "留下一朵花", en: "Flower" },
-  { id: "note", zh: "留了句话", en: "Note" },
-  { id: "cookie", zh: "给了一块饼干", en: "Cookie" },
+export const FEELINGS = [
+  { id: "glad", zh: "很开心", en: "Happy" },
+  { id: "weary", zh: "好累", en: "Tired" },
+  { id: "longing", zh: "想你", en: "Missing you" },
+  { id: "peckish", zh: "想吃东西", en: "Hungry" },
+  { id: "playful", zh: "想玩", en: "Want to play" },
+  { id: "quiet", zh: "安静一下", en: "Need quiet" },
 ] as const;
+
+export const PLAN_DRAWS = [
+  { zh: "吃点什么", en: "Something to eat", jars: ["dinner", "snack", "drink"] },
+  { zh: "看什么", en: "Something to watch", jars: ["movie"] },
+  { zh: "玩什么", en: "Something to play", picks: ["一起打游戏", "一起玩 Roblox", "散步", "待在家里"] },
+  { zh: "听什么", en: "Something to hear", picks: ["一起听音乐", "安静地听一会儿", "交换一首歌"] },
+  { zh: "出门还是宅家", en: "Out or home", picks: ["出门走走", "待在家里", "去逛一下"] },
+  { zh: "随机约会", en: "A random date", jars: ["date", "weekend"] },
+] as const;
+
+export const WHO_DRAWS = [
+  { zh: "谁选晚餐", en: "Who picks dinner" },
+  { zh: "谁选电影", en: "Who picks the movie" },
+  { zh: "谁选游戏", en: "Who picks the game" },
+  { zh: "谁选歌", en: "Who picks the song" },
+  { zh: "谁安排今天", en: "Who plans today" },
+  { zh: "谁先发消息", en: "Who texts first" },
+] as const;
+
+export const SWEET_DRAWS = [
+  { zh: "抱一下", en: "A hug" },
+  { zh: "亲亲", en: "A kiss" },
+  { zh: "牵手一下", en: "Hold hands" },
+  { zh: "摸摸头", en: "A head pat" },
+  { zh: "说一句喜欢你的话", en: "Say you like them" },
+  { zh: "互相发一张照片", en: "Send each other a photo" },
+] as const;
+
+export const GIFT_KINDS = [
+  { id: "hug", zh: "抱抱", en: "Hug", line: "抱了你一下" },
+  { id: "kiss", zh: "亲亲", en: "Kiss", line: "亲了你一下" },
+  { id: "hand", zh: "牵手", en: "Hold hands", line: "牵了你的手" },
+  { id: "cuddle", zh: "贴贴", en: "Cuddle", line: "贴了贴你" },
+  { id: "flower", zh: "送花", en: "Flower", line: "送了你一朵花" },
+  { id: "cookie", zh: "小饼干", en: "Cookie", line: "给了你一块饼干" },
+  { id: "note", zh: "留句话", en: "A note", line: "留了句话" },
+  { id: "pat", zh: "摸了摸", en: "Pat", line: "摸了摸你" },
+] as const;
+
+export const CLOSER_KINDS = GIFT_KINDS.filter((item) => item.id !== "pat");
 
 export const ONLINE_MS = 3 * 60 * 1000;
 

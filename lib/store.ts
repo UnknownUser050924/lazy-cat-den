@@ -7,16 +7,22 @@ import {
   DRAW_JARS,
   DRAW_TYPES,
   EVENT_TYPES,
+  FEELINGS,
   GENDERS,
   GIFT_KINDS,
   KNOW_PROMPTS,
   NOTE_COLORS,
+  PLAN_DRAWS,
   POCKET_KEYS,
+  SWEET_DRAWS,
   TONIGHT_IDEAS,
   VIBES,
   WALLS,
+  WHO_DRAWS,
 } from "./constants";
 import { promptForDate } from "./cottage";
+import { emptyGames, mergeGames, rpsBeats, sanitizeGames } from "./games";
+import { dateKey, daysBetweenKeys } from "./time";
 import { emptyProfile } from "./profile";
 import type { Member, Memory, Profile, Room, RoomAction } from "./types";
 
@@ -47,15 +53,11 @@ function withLock<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 function todayKey(now = Date.now()) {
-  return new Date(now).toISOString().slice(0, 10);
+  return dateKey(now);
 }
 
 function daysBetween(from: number, to: number) {
-  const a = new Date(from);
-  const b = new Date(to);
-  a.setHours(0, 0, 0, 0);
-  b.setHours(0, 0, 0, 0);
-  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+  return Math.max(0, daysBetweenKeys(from, to));
 }
 
 function isRealName(name: string) {
@@ -91,6 +93,7 @@ function emptyRoom(id: string): Room {
     gifts: [],
     memories: [],
     pats: [],
+    games: emptyGames(),
     cat: {
       mood: 72,
       lastPat: 0,
@@ -199,6 +202,7 @@ function normalizeRoom(room: Room): Room {
   room.gifts = room.gifts ?? [];
   room.memories = room.memories ?? [];
   room.pats = room.pats ?? [];
+  room.games = room.games ?? emptyGames();
   return room;
 }
 
@@ -267,8 +271,11 @@ function mergeRooms(left: Room, right: Room): Room {
   room.memories = mergeById(other.memories ?? [], room.memories ?? []);
   room.pats = mergePats(other.pats, room.pats);
   room.daily = mergeDaily(other.daily ?? [], room.daily ?? []);
+  room.games = mergeGames(other.games, room.games);
   room.cat.lastCheckin = Math.max(room.cat.lastCheckin, other.cat.lastCheckin);
   room.cat.lastPat = Math.max(room.cat.lastPat, other.cat.lastPat);
+  room.cat.lastToy = Math.max(room.cat.lastToy ?? 0, other.cat.lastToy ?? 0);
+  room.cat.lastFeed = Math.max(room.cat.lastFeed ?? 0, other.cat.lastFeed ?? 0);
   room.cat.mood = Math.max(room.cat.mood, other.cat.mood);
   return room;
 }
@@ -300,9 +307,10 @@ const MEMORY_PLACE: Record<string, string> = {
   "letter-open": "letter",
   "first-chat": "chat",
   wish: "wishlist",
+  "wish-done": "wishlist",
   "cat-100": "cat",
   pat: "cat",
-  gift: "corner",
+  gift: "",
   pocket: "corner",
   know: "corner",
   today: "today",
@@ -461,11 +469,14 @@ function sanitizeRoom(id: string, raw: unknown): Room | null {
     gifts: takeList(src.gifts, 30),
     memories: takeList(src.memories, 80),
     pats: takeList(src.pats, 40),
+    games: sanitizeGames(src.games),
     cat: {
       mood: Number.isFinite(mood) ? Math.min(100, Math.max(4, mood)) : base.cat.mood,
       lastPat: typeof cat.lastPat === "number" ? cat.lastPat : 0,
       lastCheckin: typeof cat.lastCheckin === "number" ? cat.lastCheckin : base.cat.lastCheckin,
       decayAppliedOn: typeof cat.decayAppliedOn === "string" ? cat.decayAppliedOn : base.cat.decayAppliedOn,
+      lastToy: typeof cat.lastToy === "number" ? cat.lastToy : 0,
+      lastFeed: typeof cat.lastFeed === "number" ? cat.lastFeed : 0,
     },
   });
   const hasAnything =
@@ -522,6 +533,20 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
           actor: name,
           place: "cat",
         });
+        break;
+      }
+      case "playToy": {
+        touchMember(room, name);
+        if (now - (room.cat.lastToy ?? 0) < 45_000) throw new Error("毛线球还在滚，等一下");
+        room.cat.lastToy = now;
+        bumpMood(room, 4);
+        break;
+      }
+      case "feedCat": {
+        touchMember(room, name);
+        if (now - (room.cat.lastFeed ?? 0) < 90_000) throw new Error("碗里还有，等一下再喂");
+        room.cat.lastFeed = now;
+        bumpMood(room, 4);
         break;
       }
       case "ask": {
@@ -605,7 +630,16 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         if (!wish) throw new Error("Wish not found");
         touchMember(room, name);
         wish.done = !wish.done;
-        if (wish.done) bumpMood(room, 5);
+        if (wish.done) {
+          bumpMood(room, 5);
+          remember(room, {
+            kind: "wish-done",
+            titleZh: `完成了愿望：${wish.text.slice(0, 28)}`,
+            titleEn: "Finished a wish",
+            actor: name,
+            place: "wishlist",
+          });
+        }
         break;
       }
       case "removeWish": {
@@ -615,7 +649,47 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
       }
       case "draw": {
         touchMember(room, name);
-        if (action.drawType === "tonight") {
+        if (action.drawType === "plan") {
+          const theme = PLAN_DRAWS[Math.floor(Math.random() * PLAN_DRAWS.length)];
+          let winner: string;
+          if ("jars" in theme) {
+            const jarName = theme.jars[Math.floor(Math.random() * theme.jars.length)];
+            const pool = DRAW_JARS[jarName];
+            winner = pool[Math.floor(Math.random() * pool.length)].zh;
+          } else {
+            winner = theme.picks[Math.floor(Math.random() * theme.picks.length)];
+          }
+          room.draws.unshift({
+            id: uid(),
+            type: "plan",
+            labelZh: theme.zh,
+            labelEn: theme.en,
+            winner,
+            createdAt: now,
+          });
+        } else if (action.drawType === "who") {
+          const names = [...new Set(room.members.map((m) => m.displayName))];
+          if (names.length < 2) throw new Error("Need two people in the room first");
+          const task = WHO_DRAWS[Math.floor(Math.random() * WHO_DRAWS.length)];
+          room.draws.unshift({
+            id: uid(),
+            type: "who",
+            labelZh: task.zh,
+            labelEn: task.en,
+            winner: names[Math.floor(Math.random() * names.length)],
+            createdAt: now,
+          });
+        } else if (action.drawType === "sweet") {
+          const pick = SWEET_DRAWS[Math.floor(Math.random() * SWEET_DRAWS.length)];
+          room.draws.unshift({
+            id: uid(),
+            type: "sweet",
+            labelZh: "来点甜的",
+            labelEn: pick.en,
+            winner: pick.zh,
+            createdAt: now,
+          });
+        } else if (action.drawType === "tonight") {
           const idea = TONIGHT_IDEAS[Math.floor(Math.random() * TONIGHT_IDEAS.length)];
           room.draws.unshift({
             id: uid(),
@@ -719,9 +793,10 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         break;
       }
       case "setStatus": {
-        if (!COUPLE_STATUSES.some((item) => item.id === action.statusId)) {
-          throw new Error("Unknown status");
-        }
+        const knownFeeling =
+          COUPLE_STATUSES.some((item) => item.id === action.statusId) ||
+          FEELINGS.some((item) => item.id === action.statusId);
+        if (!knownFeeling) throw new Error("Unknown status");
         memberOf(room, name).statusId = action.statusId;
         break;
       }
@@ -921,6 +996,84 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         }
         break;
       }
+      case "startRps": {
+        touchMember(room, name);
+        const partner = room.members
+          .filter((member) => member.displayName !== name)
+          .sort((a, b) => b.lastSeen - a.lastSeen)[0];
+        if (!partner) throw new Error("等另一个人来再玩");
+        if (room.games.active && room.games.active.status !== "done") throw new Error("已经有一局了");
+        room.games.active = {
+          id: uid(),
+          gameType: "rps",
+          status: "picking",
+          players: [name, partner.displayName],
+          picks: {},
+          locked: [],
+          scores: { [name]: 0, [partner.displayName]: 0 },
+          round: 1,
+          createdAt: now,
+          updatedAt: now,
+          lastActionBy: name,
+        };
+        break;
+      }
+      case "lockRps": {
+        const game = room.games.active;
+        if (!game || game.status !== "picking") throw new Error("这局还没开始");
+        if (!game.players.includes(name)) throw new Error("这局不是你的");
+        if (game.locked.includes(name)) throw new Error("已经选好了");
+        const pick = action.pick;
+        if (pick !== "rock" && pick !== "scissors" && pick !== "paper") throw new Error("选一个");
+        game.picks[name] = pick;
+        game.locked = [...game.locked, name];
+        game.updatedAt = now;
+        game.lastActionBy = name;
+        if (game.players.every((player) => game.locked.includes(player))) {
+          const [first, second] = game.players;
+          const left = game.picks[first];
+          const right = game.picks[second];
+          if (left && right && rpsBeats(left, right)) game.scores[first] = (game.scores[first] ?? 0) + 1;
+          else if (left && right && rpsBeats(right, left)) game.scores[second] = (game.scores[second] ?? 0) + 1;
+          const finished = game.players.some((player) => (game.scores[player] ?? 0) >= 2);
+          game.status = finished ? "done" : "reveal";
+          if (finished) {
+            game.winner = game.players.find((player) => (game.scores[player] ?? 0) >= 2);
+            room.games.recent.unshift({
+              id: game.id,
+              gameType: "rps",
+              titleZh: `${game.winner ?? "我们"}赢了石头剪刀布`,
+              at: now,
+            });
+            room.games.recent = room.games.recent.slice(0, 12);
+            remember(room, {
+              kind: "game",
+              titleZh: "我们玩了一局石头剪刀布",
+              titleEn: "Played rock paper scissors",
+              actor: name,
+              place: "games",
+            });
+          }
+        }
+        break;
+      }
+      case "nextRps": {
+        const game = room.games.active;
+        if (!game || game.status !== "reveal") throw new Error("这回合还没揭晓");
+        if (!game.players.includes(name)) throw new Error("这局不是你的");
+        game.picks = {};
+        game.locked = [];
+        game.round += 1;
+        game.status = "picking";
+        game.updatedAt = now;
+        game.lastActionBy = name;
+        break;
+      }
+      case "clearRps": {
+        if (room.games.active && !room.games.active.players.includes(name)) throw new Error("这局不是你的");
+        room.games.active = null;
+        break;
+      }
       case "gift": {
         const targetName = action.target.trim();
         if (!room.members.some((item) => item.displayName === targetName)) {
@@ -928,24 +1081,29 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
         }
         if (targetName === name) throw new Error("Leave this for them");
         if (!GIFT_KINDS.some((item) => item.id === action.kind)) throw new Error("Unknown gift");
+        const note = action.kind === "note" ? (action.note ?? "").trim().slice(0, 80) : "";
+        if (action.kind === "note" && !note) throw new Error("Write a little note");
         touchMember(room, name);
         room.gifts.unshift({
           id: uid(),
           from: name,
           to: targetName,
           kind: action.kind,
+          note,
           createdAt: now,
         });
         room.gifts = room.gifts.slice(0, 30);
         bumpMood(room, 2);
-        const giftLabel = GIFT_KINDS.find((item) => item.id === action.kind)?.zh ?? "礼物";
-        remember(room, {
-          kind: "gift",
-          titleZh: `${name}给${targetName}${giftLabel}`,
-          titleEn: "Left a gift",
-          actor: name,
-          place: "corner",
-        });
+        if (action.kind === "kiss" || action.kind === "flower" || action.kind === "note") {
+          const giftLabel = GIFT_KINDS.find((item) => item.id === action.kind)?.zh ?? "靠近";
+          remember(room, {
+            kind: "gift",
+            titleZh: note ? `${name}对${targetName}说：${note.slice(0, 24)}` : `${name}对${targetName}${giftLabel}`,
+            titleEn: "Came closer",
+            actor: name,
+            place: "",
+          });
+        }
         break;
       }
       default:

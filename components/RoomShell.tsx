@@ -3,10 +3,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
+import { Sidebar } from "@/components/Sidebar";
 import { slugifyRoom } from "@/lib/constants";
 import { readSession, writeSession } from "@/lib/session";
 import { useRoom } from "@/lib/use-room";
-import { isNight } from "@/lib/cottage";
+import { skyPhase } from "@/lib/cottage";
+import { dateLabel, clockLabel } from "@/lib/time";
+import { useNow } from "@/lib/use-now";
 import type { ClientAction, Room } from "@/lib/types";
 
 type RoomContextValue = {
@@ -36,16 +39,12 @@ export function RoomShell({
 }) {
   const router = useRouter();
   const [name, setName] = useState<string | null>(null);
+  const now = useNow();
   const roomState = useRoom(roomId, name);
 
   useEffect(() => {
-    const apply = () => {
-      document.documentElement.dataset.sky = isNight() ? "night" : "day";
-    };
-    apply();
-    const timer = setInterval(apply, 60_000);
-    return () => clearInterval(timer);
-  }, []);
+    document.documentElement.dataset.sky = skyPhase(now);
+  }, [now]);
 
   useEffect(() => {
     const session = readSession();
@@ -74,33 +73,41 @@ export function RoomShell({
         ...roomState,
       }}
     >
-      <div className="mx-auto min-h-dvh max-w-lg">
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--cream)_88%,transparent)] px-4 py-3 backdrop-blur-md">
-          <div>
-            <p className="text-sm font-extrabold tracking-wide">懒猫小屋</p>
-            <p className="text-[11px] text-muted">
-              {roomId} · 你是 {name}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push(`/room/${encodeURIComponent(roomId)}/corner`)}
-              className="rounded-full border border-[var(--line)] bg-card px-3 py-1 text-xs text-muted"
-            >
-              角落 Corner
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/")}
-              className="rounded-full border border-[var(--line)] bg-card px-3 py-1 text-xs text-muted"
-            >
-              换房间 Switch
-            </button>
-          </div>
-        </header>
-        <main className="px-4 pb-28 pt-4">{children}</main>
-        <BottomNav room={roomId} />
+      <div className="min-h-dvh md:grid md:grid-cols-[13.5rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)]">
+        <Sidebar room={roomId} />
+        <div className="min-w-0">
+          <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--cream)_88%,transparent)] px-4 py-3 text-ink backdrop-blur-md">
+            <div>
+              <p className="text-sm font-extrabold tracking-wide">懒猫小屋</p>
+              <p className="text-[11px] text-muted">
+                <time dateTime={new Date(now).toISOString()}>
+                  {dateLabel(now)} · {clockLabel(now)}
+                </time>
+              </p>
+              <p className="text-[11px] text-muted">
+                {roomId} · 你是 {name}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => router.push(`/room/${encodeURIComponent(roomId)}/corner`)}
+                className="rounded-full border border-[var(--line)] bg-card px-3 py-1 text-xs text-muted md:hidden"
+              >
+                角落
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="rounded-full border border-[var(--line)] bg-card px-3 py-1 text-xs text-muted"
+              >
+                换房间
+              </button>
+            </div>
+          </header>
+          <main className="mx-auto w-full max-w-lg px-4 pb-28 pt-4 md:max-w-none md:px-6 md:pb-10 xl:px-10">{children}</main>
+          <BottomNav room={roomId} />
+        </div>
       </div>
     </RoomContext.Provider>
   );
@@ -108,6 +115,7 @@ export function RoomShell({
 
 export function formatTime(ts: number) {
   return new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Kuala_Lumpur",
     month: "numeric",
     day: "numeric",
     hour: "2-digit",

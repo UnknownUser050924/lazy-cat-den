@@ -3,14 +3,19 @@
 import { useState } from "react";
 import { CatMascot, moodLabel } from "@/components/CatMascot";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
+import { catPose, catSpeech, skyPhase } from "@/lib/cottage";
+import { useNow } from "@/lib/use-now";
 
 export default function CatPage() {
-  const { room, act, busy } = useRoomContext();
+  const { room, displayName, act, busy } = useRoomContext();
   const [patted, setPatted] = useState(false);
+  const now = useNow();
 
   if (!room) return <p className="text-center text-muted">猫在被子里…</p>;
 
+  const sky = skyPhase(now);
   const label = moodLabel(room.cat.mood);
+  const speech = catSpeech(room, sky, displayName, now);
 
   async function pat() {
     setPatted(true);
@@ -19,23 +24,16 @@ export default function CatPage() {
   }
 
   return (
-    <div className="space-y-5 text-center">
+    <div className="mx-auto max-w-xl space-y-5 text-center">
       <header>
         <h1 className="text-2xl font-extrabold">懒猫 The cat</h1>
         <p className="text-sm text-muted">今天摸摸它，它就会记得你们来过</p>
       </header>
       <section className="card rounded-[28px] px-4 pb-6 pt-3">
-        <CatMascot mood={room.cat.mood} patted={patted} onPat={pat} />
-        <p className="text-lg font-extrabold">
-          {label.zh} · {label.en}
-        </p>
-        <div className="mx-auto mt-3 h-3 w-56 overflow-hidden rounded-full bg-blush">
-          <div
-            className="h-full rounded-full bg-rose transition-all"
-            style={{ width: `${room.cat.mood}%` }}
-          />
-        </div>
-        <p className="mt-2 text-sm text-muted">{room.cat.mood}/100</p>
+        <CatMascot pose={patted ? "happy" : catPose(room, sky, now)} patted={patted} onPat={pat} />
+        <p className="text-lg font-extrabold">{speech.zh}</p>
+        <p className="text-xs text-muted">{speech.en}</p>
+        <p className="mt-2 text-sm font-bold">{label.zh}</p>
         <button
           disabled={busy}
           onClick={pat}
