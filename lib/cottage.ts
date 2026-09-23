@@ -56,9 +56,14 @@ export function promptForDate(date: string) {
   return DAILY_PROMPTS[index];
 }
 
+export function othersOf(room: Room, selfName: string) {
+  return room.members
+    .filter((member) => member.displayName !== selfName)
+    .sort((a, b) => b.lastSeen - a.lastSeen);
+}
+
 export function partnerOf(room: Room, selfName: string) {
-  const others = room.members.filter((member) => member.displayName !== selfName);
-  return others.sort((a, b) => b.lastSeen - a.lastSeen)[0] ?? null;
+  return othersOf(room, selfName)[0] ?? null;
 }
 
 export function momentText(member: Member) {

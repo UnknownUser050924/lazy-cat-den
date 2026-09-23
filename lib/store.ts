@@ -457,7 +457,7 @@ function sanitizeRoom(id: string, raw: unknown): Room | null {
     ...base,
     id,
     createdAt: typeof src.createdAt === "number" ? src.createdAt : base.createdAt,
-    members: takeList(src.members, 8),
+    members: takeList(src.members, 24),
     questions: takeList(src.questions, 80),
     wishlist: takeList(src.wishlist, 80),
     notes: takeList(src.notes, 24),
@@ -998,10 +998,13 @@ export async function applyAction(id: string, action: RoomAction): Promise<Room>
       }
       case "startRps": {
         touchMember(room, name);
-        const partner = room.members
-          .filter((member) => member.displayName !== name)
-          .sort((a, b) => b.lastSeen - a.lastSeen)[0];
-        if (!partner) throw new Error("等另一个人来再玩");
+        const wanted = action.target?.trim();
+        const partner = wanted
+          ? room.members.find((member) => member.displayName === wanted)
+          : room.members
+              .filter((member) => member.displayName !== name)
+              .sort((a, b) => b.lastSeen - a.lastSeen)[0];
+        if (!partner || partner.displayName === name) throw new Error("等另一个人来再玩");
         if (room.games.active && room.games.active.status !== "done") throw new Error("已经有一局了");
         room.games.active = {
           id: uid(),

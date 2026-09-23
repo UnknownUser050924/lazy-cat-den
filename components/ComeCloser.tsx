@@ -5,7 +5,7 @@ import { useRoomContext } from "@/components/RoomShell";
 import { CLOSER_KINDS } from "@/lib/constants";
 import { closerLine } from "@/lib/cottage";
 
-export function ComeCloser({ partnerName }: { partnerName: string | null }) {
+export function ComeCloser({ people }: { people: string[] }) {
   const { room, displayName, act } = useRoomContext();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const seen = useRef(new Set<string>());
@@ -13,6 +13,12 @@ export function ComeCloser({ partnerName }: { partnerName: string | null }) {
   const [note, setNote] = useState("");
   const [burst, setBurst] = useState("");
   const [localError, setLocalError] = useState("");
+  const [to, setTo] = useState(people[0] ?? "");
+  const partnerName = people.includes(to) ? to : people[0] ?? "";
+
+  useEffect(() => {
+    if (!people.includes(to)) setTo(people[0] ?? "");
+  }, [people, to]);
 
   useEffect(() => {
     if (!room || primed.current) return;
@@ -79,7 +85,21 @@ export function ComeCloser({ partnerName }: { partnerName: string | null }) {
               关闭
             </button>
           </div>
-          {!partnerName ? <p className="mt-4 text-sm text-muted">等对方走进小屋，就能靠近一点。</p> : null}
+          {!people.length ? <p className="mt-4 text-sm text-muted">等对方走进小屋，就能靠近一点。</p> : null}
+          {people.length > 1 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {people.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setTo(name)}
+                  className={`rounded-full px-3 py-1 text-sm font-bold ${partnerName === name ? "bg-rose-deep text-white" : "bg-blush text-rose-deep"}`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className="mt-4 grid grid-cols-2 gap-2">
             {CLOSER_KINDS.filter((item) => item.id !== "note").map((item) => (
               <button

@@ -14,7 +14,7 @@ import {
   catSpot,
   feelingOf,
   momentText,
-  partnerOf,
+  othersOf,
   presenceLabel,
   roomDecor,
   skyPhase,
@@ -41,7 +41,10 @@ export function CottageRoom() {
   }
 
   const me = room.members.find((member) => member.displayName === displayName) ?? null;
-  const partner = partnerOf(room, displayName);
+  const others = othersOf(room, displayName);
+  const [beside, ...extras] = others;
+  const leftExtras = extras.filter((_, index) => index % 2 === 0);
+  const rightExtras = extras.filter((_, index) => index % 2 === 1);
   const speech = catSpeech(room, sky, displayName, now);
   const spot = catSpot(room, sky, now);
   const decor = roomDecor(room);
@@ -111,9 +114,14 @@ export function CottageRoom() {
           </div>
         </div>
 
-        <div className="mx-auto mt-4 grid max-w-5xl items-end gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)_minmax(0,0.9fr)]">
-          <PartnerSpot member={me} selfName={displayName} now={now} emptyLabel="你的位置" self />
-          <div className="order-first text-center xl:order-none">
+        <div className="mx-auto mt-4 grid max-w-5xl items-start gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)_minmax(0,0.9fr)]">
+          <div className="order-2 space-y-3 xl:order-none">
+            <PartnerSpot member={me} selfName={displayName} now={now} emptyLabel="你的位置" self />
+            {leftExtras.map((member) => (
+              <PartnerSpot key={member.displayName} member={member} selfName={displayName} now={now} emptyLabel="" />
+            ))}
+          </div>
+          <div className="order-1 text-center md:col-span-2 xl:col-span-1 xl:order-none">
             <div className={`cat-spot-${spot}`}>
               <CatMascot pose={actPose ?? catPose(room, sky, now)} size={200} patted={patted || actPose === "playing"} onPat={pat} />
             </div>
@@ -122,6 +130,7 @@ export function CottageRoom() {
             <p className="mt-1 text-xs text-muted">
               {moodLabel(room.cat.mood).zh}
               {streak > 0 ? ` · 一起 ${streak} 天` : ""}
+              {room.members.length > 2 ? ` · ${room.members.length} 个人` : ""}
             </p>
             <div className="mt-2 flex justify-center gap-2">
               <button type="button" onClick={() => play("playToy")} className="rounded-full bg-blush px-3 py-1 text-xs font-bold text-rose-deep">
@@ -132,10 +141,15 @@ export function CottageRoom() {
               </button>
             </div>
             <div className="mt-3">
-              <ComeCloser partnerName={partner?.displayName ?? null} />
+              <ComeCloser people={others.map((member) => member.displayName)} />
             </div>
           </div>
-          <PartnerSpot member={partner} selfName={displayName} now={now} emptyLabel="还空着一个位置" />
+          <div className="order-3 space-y-3">
+            <PartnerSpot member={beside ?? null} selfName={displayName} now={now} emptyLabel="还空着一个位置" />
+            {rightExtras.map((member) => (
+              <PartnerSpot key={member.displayName} member={member} selfName={displayName} now={now} emptyLabel="" />
+            ))}
+          </div>
         </div>
 
         <div className="mx-auto mt-5 flex max-w-5xl flex-wrap justify-center gap-2">
@@ -219,7 +233,7 @@ function PartnerSpot({
   const thought = momentText(member);
   return (
     <div className={`rounded-[24px] bg-[color-mix(in_srgb,var(--card)_72%,transparent)] px-4 py-4 ${self ? "" : ""}`}>
-      <p className="text-[11px] text-muted">{self ? "我" : "对方"}</p>
+      <p className="text-[11px] text-muted">{self ? "我" : "小屋里"}</p>
       <p className="text-lg font-extrabold">{member.displayName}</p>
       <p className="text-xs text-muted">{presenceLabel(member, selfName, now)}</p>
       <p className="mt-2 text-sm">{member.profile.signature || "还没写签名"}</p>

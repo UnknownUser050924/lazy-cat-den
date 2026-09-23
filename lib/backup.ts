@@ -90,5 +90,15 @@ export function backupHasMore(local: Room, server: Room) {
   }
   if ((local.cat?.mood ?? 0) > (server.cat?.mood ?? 0)) return true;
   if ((local.cat?.lastPat ?? 0) > (server.cat?.lastPat ?? 0)) return true;
+  if ((local.cat?.lastToy ?? 0) > (server.cat?.lastToy ?? 0)) return true;
+  if ((local.cat?.lastFeed ?? 0) > (server.cat?.lastFeed ?? 0)) return true;
+  if ((local.cat?.lastCheckin ?? 0) > (server.cat?.lastCheckin ?? 0)) return true;
+  if ((local.members ?? []).some((member) => !(server.members ?? []).some((item) => item.displayName === member.displayName))) {
+    return true;
+  }
+  if (local.games?.active && (!server.games?.active || (local.games.active.updatedAt ?? 0) > (server.games.active.updatedAt ?? 0))) {
+    return true;
+  }
+  if (idsMissing(local.games?.recent, server.games?.recent)) return true;
   return false;
 }

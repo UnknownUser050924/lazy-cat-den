@@ -36,6 +36,7 @@ export function presentRoom(room: Room, viewer: string): Room {
 export function consoleState(room: Room, selfName: string): "idle" | "waiting" | "active" {
   const game = room.games?.active;
   if (!game || game.status === "done") return "idle";
+  if (!game.players.includes(selfName)) return "active";
   if (game.status === "picking" && !game.locked.includes(selfName)) return "waiting";
   return "active";
 }

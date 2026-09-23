@@ -86,6 +86,9 @@ export function RoomShell({
               </p>
               <p className="text-[11px] text-muted">
                 {roomId} · 你是 {name}
+                {roomState.room?.members.length
+                  ? ` · ${roomState.room.members.map((member) => member.displayName).join("、")}`
+                  : ""}
               </p>
             </div>
             <div className="flex items-center gap-2">

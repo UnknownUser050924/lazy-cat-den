@@ -46,7 +46,7 @@ export default function ChatPage() {
         <h1 className="text-2xl font-extrabold">聊天</h1>
         <p className="text-sm text-muted">留在小屋里的话</p>
       </header>
-      {heart ? <p className="heart-float mt-2 text-sm text-rose" aria-live="polite">♡ 对方留了一句</p> : null}
+      {heart ? <p className="heart-float mt-2 text-sm text-rose" aria-live="polite">♡ {room?.messages[0]?.author}留了一句</p> : null}
 
       <div className="mt-4 flex flex-1 flex-col gap-2">
         {messages.length === 0 ? (
