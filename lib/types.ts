@@ -177,6 +177,8 @@ export type Room = {
   clearedSeats: string[];
   banned: string[];
   away?: Member[];
+  admin?: boolean;
+  claim?: string;
 };
 
 export type RoomAction =

@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CatMascot } from "@/components/CatMascot";
 import { DEFAULT_ROOM, slugifyRoom } from "@/lib/constants";
-import { readSession, writeSession } from "@/lib/session";
+import { readClaim, readSession, writeSession } from "@/lib/session";
 
 export function JoinForm({
   initialRoom = "",
@@ -36,7 +36,7 @@ export function JoinForm({
         router.replace(`/room/${encodeURIComponent(id)}`);
         return;
       }
-      setName("");
+      setName(existing?.displayName ?? "");
       return;
     }
     if (existing?.room) setRoom(existing.room);
@@ -58,14 +58,15 @@ export function JoinForm({
     setBusy(true);
     setError("");
     try {
+      const savedClaim = readClaim(roomId, displayName);
       const res = await fetch(`/api/rooms/${encodeURIComponent(roomId)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "join", displayName }),
+        body: JSON.stringify({ type: "join", displayName, claim: savedClaim }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as { error?: string; claim?: string };
       if (!res.ok) throw new Error(data.error || "Could not join");
-      const headerClaim = res.headers.get("X-LCD-Claim") ?? undefined;
+      const headerClaim = res.headers.get("X-LCD-Claim") ?? data.claim ?? savedClaim;
       writeSession({ room: roomId, displayName, claim: headerClaim });
       router.push(`/room/${encodeURIComponent(roomId)}`);
     } catch (err) {
@@ -123,7 +124,7 @@ export function JoinForm({
         </label>
         {fromInvite ? null : (
           <div className="flex gap-2">
-            {["嘉怡", "宝宝"].map((item) => (
+            {["嘉怡", "宝宝", "无名"].map((item) => (
               <button
                 key={item}
                 type="button"

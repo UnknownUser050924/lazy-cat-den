@@ -46,6 +46,7 @@ export function presentRoom(room: Room, viewer: string, admin = false): Room {
     memories,
     clearedSeats: admin ? [...(room.clearedSeats ?? [])] : [],
     banned: admin ? [...(room.banned ?? [])] : [],
+    admin,
     ...(admin ? { away } : {}),
   };
   const active = next.games?.active;

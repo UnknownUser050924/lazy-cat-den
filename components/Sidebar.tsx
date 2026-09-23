@@ -34,7 +34,7 @@ export function Sidebar({
   const base = `/room/${encodeURIComponent(room)}`;
 
   return (
-    <aside className="sticky top-0 hidden h-dvh flex-col overflow-y-auto border-r border-[var(--line)] bg-[color-mix(in_srgb,var(--card)_78%,transparent)] px-3 py-5 md:flex">
+    <aside className="sticky top-0 hidden max-h-dvh flex-col self-start overflow-y-auto border-r border-[var(--line)] bg-[color-mix(in_srgb,var(--card)_78%,transparent)] px-3 py-5 md:flex">
       <p className="px-2 text-sm font-extrabold tracking-wide">懒猫小屋</p>
       <p className="px-2 text-[11px] text-muted">Lazy Cat Den</p>
       <nav className="mt-6 space-y-1" aria-label="小屋">

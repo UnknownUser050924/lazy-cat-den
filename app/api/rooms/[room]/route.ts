@@ -12,11 +12,18 @@ type Ctx = { params: Promise<{ room: string }> };
 
 function asRoom(data: Room, viewer: string, extra?: { room: string; displayName: string; claim?: string }) {
   const admin = isKeeper(viewer);
-  const response = NextResponse.json(presentRoom(data, viewer, admin));
+  const presented = presentRoom(data, viewer, admin);
+  const response = NextResponse.json(
+    extra?.claim ? { ...presented, admin, claim: extra.claim } : { ...presented, admin },
+  );
+  response.headers.set("Access-Control-Expose-Headers", "X-LCD-Claim, X-LCD-Admin");
   if (admin) response.headers.set("X-LCD-Admin", "1");
   if (extra?.claim) {
     response.headers.set("X-LCD-Claim", extra.claim);
-    response.headers.append("Set-Cookie", sessionCookie({ room: extra.room, displayName: extra.displayName, claim: extra.claim }));
+    response.headers.append(
+      "Set-Cookie",
+      sessionCookie({ room: extra.room, displayName: extra.displayName, claim: extra.claim }),
+    );
   }
   return response;
 }
@@ -56,7 +63,7 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Invalid room" }, { status: 400 });
   }
   try {
-    const body = (await req.json()) as { type?: string; displayName?: string; room?: unknown };
+    const body = (await req.json()) as { type?: string; displayName?: string; claim?: string; room?: unknown };
     const session = sessionFromRequest(req);
     const sessionForRoom = session?.room === id ? session : undefined;
 
@@ -77,10 +84,14 @@ export async function POST(req: Request, ctx: Ctx) {
     if (body.type === "join" || body.type === "checkin") {
       const requested =
         (typeof body.displayName === "string" && body.displayName.trim()) || sessionForRoom?.displayName || "";
+      const presentedClaim =
+        (typeof body.claim === "string" && body.claim.trim()) ||
+        (sessionForRoom?.displayName === requested ? sessionForRoom.claim : undefined) ||
+        (session?.displayName === requested ? session.claim : undefined);
       const { room: data, claim } = await applyAction(
         id,
         { type: body.type, displayName: requested },
-        sessionForRoom,
+        { displayName: requested, claim: presentedClaim },
       );
       return asRoom(data, requested, { room: id, displayName: requested, claim });
     }

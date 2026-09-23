@@ -220,6 +220,8 @@ function normalizeRoom(room: Room): Room {
   room.clearedSeats = [...new Set((room.clearedSeats ?? []).filter((name) => isRealName(name)))].slice(0, 48);
   room.banned = [...new Set((room.banned ?? []).filter((name) => isRealName(name)))].slice(0, 48);
   delete room.away;
+  delete room.admin;
+  delete room.claim;
   return room;
 }
 

@@ -7,6 +7,7 @@ export type Session = {
 };
 
 const COOKIE = "lcd-session";
+const CLAIMS_KEY = "lazy-cat-den-claims";
 
 function pack(session: Session) {
   const base = `${encodeURIComponent(session.room)}|${encodeURIComponent(session.displayName)}`;
@@ -38,6 +39,50 @@ function readCookie(): Session | null {
   return unpack(match[1]);
 }
 
+function claimSlot(room: string, name: string) {
+  return `${room}\t${name}`;
+}
+
+function readVault(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(CLAIMS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, string>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function readClaim(room: string, name: string): string | undefined {
+  const fromVault = readVault()[claimSlot(room, name)];
+  if (fromVault) return fromVault;
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Session;
+      if (parsed.room === room && parsed.displayName === name && parsed.claim) return parsed.claim;
+    }
+  } catch {
+    // Ignore a broken session blob.
+  }
+  const cookie = readCookie();
+  if (cookie?.room === room && cookie.displayName === name && cookie.claim) return cookie.claim;
+  return undefined;
+}
+
+export function rememberClaim(room: string, name: string, claim?: string) {
+  if (!claim || typeof window === "undefined") return;
+  try {
+    const all = readVault();
+    all[claimSlot(room, name)] = claim;
+    localStorage.setItem(CLAIMS_KEY, JSON.stringify(all));
+  } catch {
+    // The phone can refuse storage. The cookie may still hold this visit.
+  }
+}
+
 export function readSession(): Session | null {
   if (typeof window === "undefined") return null;
   try {
@@ -46,10 +91,13 @@ export function readSession(): Session | null {
       const parsed = JSON.parse(raw) as Session;
       if (parsed.room && parsed.displayName) {
         const cookie = readCookie();
-        if (cookie?.claim && cookie.room === parsed.room && cookie.displayName === parsed.displayName) {
-          return { ...parsed, claim: parsed.claim || cookie.claim };
-        }
-        return parsed;
+        const claim =
+          parsed.claim ||
+          (cookie?.claim && cookie.room === parsed.room && cookie.displayName === parsed.displayName
+            ? cookie.claim
+            : undefined) ||
+          readVault()[claimSlot(parsed.room, parsed.displayName)];
+        return { ...parsed, claim };
       }
     }
   } catch {
@@ -57,18 +105,24 @@ export function readSession(): Session | null {
   }
   const cookie = readCookie();
   if (cookie) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(cookie));
+    const claim = cookie.claim || readVault()[claimSlot(cookie.room, cookie.displayName)];
+    const next = { ...cookie, claim };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+    if (claim) rememberClaim(cookie.room, cookie.displayName, claim);
+    return next;
   }
-  return cookie;
+  return null;
 }
 
 export function writeSession(session: Session) {
   const cookie = typeof document !== "undefined" ? readCookie() : null;
   const claim =
     session.claim ||
-    (cookie?.room === session.room && cookie.displayName === session.displayName ? cookie.claim : undefined);
+    (cookie?.room === session.room && cookie.displayName === session.displayName ? cookie.claim : undefined) ||
+    readVault()[claimSlot(session.room, session.displayName)];
   const next = { ...session, claim };
   localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+  rememberClaim(next.room, next.displayName, next.claim);
   document.cookie = `${COOKIE}=${pack(next)}; Path=/; Max-Age=31536000; SameSite=Lax`;
 }
 

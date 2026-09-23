@@ -20,7 +20,8 @@ export function writeBackup(room: Room) {
   if (typeof window === "undefined") return;
   try {
     const prev = readBackup(room.id);
-    const next = prev ? { ...room, games: mergeGames(prev.games, room.games) } : room;
+    const { admin: _admin, claim: _claim, ...safe } = room;
+    const next = prev ? { ...safe, games: mergeGames(prev.games, safe.games) } : safe;
     localStorage.setItem(PREFIX + room.id, JSON.stringify(next));
   } catch {
     // The phone can refuse a huge backup. The server copy still exists.

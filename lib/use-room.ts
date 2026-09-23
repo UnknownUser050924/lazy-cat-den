@@ -16,14 +16,18 @@ export function useRoom(roomId: string, displayName: string | null) {
   const inflight = useRef(0);
   const restoring = useRef(false);
 
-  const persistHeaders = useCallback(
-    (res: Response) => {
-      setAdmin(res.headers.get("X-LCD-Admin") === "1");
-      const headerClaim = res.headers.get("X-LCD-Claim");
+  const persistResult = useCallback(
+    (res: Response, data: Room) => {
+      setAdmin(res.headers.get("X-LCD-Admin") === "1" || data.admin === true);
+      const headerClaim = res.headers.get("X-LCD-Claim") || data.claim;
+      delete data.admin;
+      delete data.claim;
       if (!headerClaim || !displayName) return;
       const session = readSession();
       if (session?.room === roomId && session.displayName === displayName) {
         writeSession({ ...session, claim: headerClaim });
+      } else {
+        writeSession({ room: roomId, displayName, claim: headerClaim });
       }
     },
     [displayName, roomId],
@@ -38,8 +42,8 @@ export function useRoom(roomId: string, displayName: string | null) {
       const payload = (await res.json().catch(() => null)) as { error?: string } | null;
       throw new Error(payload?.error || "Could not load room");
     }
-    persistHeaders(res);
     let data = (await res.json()) as Room;
+    persistResult(res, data);
     const backup = readBackup(roomId);
     if (backup && !restoring.current && backupHasMore(backup, data)) {
       restoring.current = true;
@@ -53,7 +57,10 @@ export function useRoom(roomId: string, displayName: string | null) {
             room: backup,
           }),
         });
-        if (restored.ok) data = (await restored.json()) as Room;
+        if (restored.ok) {
+          data = (await restored.json()) as Room;
+          persistResult(restored, data);
+        }
       } finally {
         restoring.current = false;
       }
@@ -65,7 +72,7 @@ export function useRoom(roomId: string, displayName: string | null) {
       setError(null);
     }
     return data;
-  }, [displayName, persistHeaders, roomId]);
+  }, [displayName, persistResult, roomId]);
 
   const act = useCallback(
     async (action: ClientAction) => {
@@ -81,9 +88,9 @@ export function useRoom(roomId: string, displayName: string | null) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Something went wrong");
-        persistHeaders(res);
-        revision.current += 1;
         const next = data as Room;
+        persistResult(res, next);
+        revision.current += 1;
         if (actSeq.current === mine) {
           setRoom(next);
           const kept = readBackup(roomId);
@@ -103,7 +110,7 @@ export function useRoom(roomId: string, displayName: string | null) {
         }
       }
     },
-    [displayName, persistHeaders, roomId],
+    [displayName, persistResult, roomId],
   );
 
   useEffect(() => {

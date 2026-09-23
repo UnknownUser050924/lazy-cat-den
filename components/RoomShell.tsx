@@ -83,7 +83,7 @@ export function RoomShell({
         ...roomState,
       }}
     >
-      <div className="min-h-dvh md:grid md:grid-cols-[13.5rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)]">
+      <div className="min-h-dvh md:grid md:grid-cols-[13.5rem_minmax(0,1fr)] md:items-start xl:grid-cols-[15rem_minmax(0,1fr)]">
         <Sidebar room={roomId} hints={hints} admin={roomState.admin} />
         <div className="min-w-0">
           <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--cream)_88%,transparent)] px-4 py-3 text-ink backdrop-blur-md">
