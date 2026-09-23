@@ -20,6 +20,7 @@ import {
   VIBES,
   WALLS,
   WHO_DRAWS,
+  SEAT_CLEARED,
 } from "./constants";
 import { claimMatches, hashClaim, newClaim } from "./claim";
 import { promptForDate } from "./cottage";
@@ -101,6 +102,7 @@ function emptyRoom(id: string): Room {
     memories: [],
     pats: [],
     games: emptyGames(),
+    clearedSeats: [],
     cat: {
       mood: 72,
       lastPat: 0,
@@ -212,6 +214,8 @@ function normalizeRoom(room: Room): Room {
   room.memories = room.memories ?? [];
   room.pats = room.pats ?? [];
   room.games = room.games ?? emptyGames();
+  room.clearedSeats = [...new Set((room.clearedSeats ?? []).filter((name) => isRealName(name)))].slice(0, 48);
+  room.members = room.members.filter((member) => !room.clearedSeats.includes(member.displayName));
   return room;
 }
 
@@ -268,7 +272,8 @@ function mergeDaily(a: Room["daily"], b: Room["daily"]): Room["daily"] {
 function mergeRooms(left: Room, right: Room): Room {
   const room = normalizeRoom(cloneRoom(right));
   const other = normalizeRoom(cloneRoom(left));
-  room.members = mergeMembers(other.members, room.members);
+  room.clearedSeats = [...new Set([...(other.clearedSeats ?? []), ...(room.clearedSeats ?? [])])].slice(0, 48);
+  room.members = mergeMembers(other.members, room.members).filter((member) => !room.clearedSeats.includes(member.displayName));
   room.questions = mergeQuestions(other.questions, room.questions);
   room.wishlist = mergeWishes(other.wishlist, room.wishlist);
   room.notes = mergeById(other.notes ?? [], room.notes ?? []);
@@ -402,6 +407,7 @@ function returningClaim(name: string, auth?: MemberAuth) {
 }
 
 function admitMember(room: Room, name: string, auth?: MemberAuth) {
+  if ((room.clearedSeats ?? []).includes(name)) throw new Error(SEAT_CLEARED);
   const now = Date.now();
   const firstToday = todayKey(room.cat.lastCheckin) !== todayKey(now);
   const existing = room.members.find((item) => item.displayName === name);
@@ -514,6 +520,25 @@ export async function getRoom(id: string): Promise<Room> {
   });
 }
 
+function takeNames(value: unknown, limit: number) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((item): item is string => typeof item === "string" && isRealName(item)))].slice(0, limit);
+}
+
+function dropFromGame(room: Room, name: string) {
+  const game = room.games?.active;
+  if (!game) return;
+  game.players = game.players.filter((player) => player !== name);
+  delete game.picks[name];
+  game.locked = game.locked.filter((player) => player !== name);
+  delete game.scores[name];
+  if (game.lastActionBy === name) game.lastActionBy = game.players[0] ?? "";
+  if (game.winner === name) delete game.winner;
+  if (game.players.length < 2) room.games.active = null;
+  game.updatedAt = Date.now();
+  room.games.stamp = Date.now();
+}
+
 function takeList<T>(value: unknown, limit: number): T[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item) => item && typeof item === "object").slice(0, limit) as T[];
@@ -546,6 +571,7 @@ function sanitizeRoom(id: string, raw: unknown): Room | null {
     memories: takeList(src.memories, 80),
     pats: takeList(src.pats, 40),
     games: sanitizeGames(src.games),
+    clearedSeats: takeNames(src.clearedSeats, 48),
     cat: {
       mood: Number.isFinite(mood) ? Math.min(100, Math.max(4, mood)) : base.cat.mood,
       lastPat: typeof cat.lastPat === "number" ? cat.lastPat : 0,
@@ -1218,6 +1244,18 @@ export async function applyAction(
             place: "",
           });
         }
+        break;
+      }
+      case "clearSeat": {
+        const targetName = action.target.trim();
+        if (!isRealName(targetName)) throw new Error("Write your own name");
+        if (targetName === name) throw new Error("这是你自己的位子");
+        if (!room.members.some((item) => item.displayName === targetName)) {
+          throw new Error("他们已经不在了");
+        }
+        room.members = room.members.filter((item) => item.displayName !== targetName);
+        if (!room.clearedSeats.includes(targetName)) room.clearedSeats.push(targetName);
+        dropFromGame(room, targetName);
         break;
       }
       default:

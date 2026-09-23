@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { Sidebar } from "@/components/Sidebar";
 import { navHints } from "@/lib/activity";
-import { slugifyRoom } from "@/lib/constants";
-import { readSession, writeSession } from "@/lib/session";
+import { SEAT_CLEARED, slugifyRoom } from "@/lib/constants";
+import { clearSession, readSession, writeSession } from "@/lib/session";
 import { useRoom } from "@/lib/use-room";
 import { skyPhase } from "@/lib/cottage";
 import { dateLabel, clockLabel } from "@/lib/time";
@@ -57,6 +57,12 @@ export function RoomShell({
     writeSession({ room: id, displayName: session.displayName, claim: session.claim });
     setName(session.displayName);
   }, [roomId, router]);
+
+  useEffect(() => {
+    if (roomState.error !== SEAT_CLEARED) return;
+    clearSession();
+    router.replace(`/?room=${encodeURIComponent(slugifyRoom(roomId) || roomId)}`);
+  }, [roomId, roomState.error, router]);
 
   if (!name) {
     return (

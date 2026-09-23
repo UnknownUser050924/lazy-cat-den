@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { slugifyRoom } from "@/lib/constants";
+import { slugifyRoom, SEAT_CLEARED } from "@/lib/constants";
 import { sessionCookie, sessionFromRequest } from "@/lib/session";
 import { presentRoom } from "@/lib/games";
 import { applyAction, notePresence, restoreRoom } from "@/lib/store";
@@ -29,6 +29,9 @@ export async function GET(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "先走进小屋" }, { status: 401 });
   }
   const result = await notePresence(id, session.displayName, session.claim);
+  if ((result.room.clearedSeats ?? []).includes(session.displayName)) {
+    return NextResponse.json({ error: SEAT_CLEARED }, { status: 401 });
+  }
   const member = result.room.members.find((item) => item.displayName === session.displayName);
   if (member?.claimHash && !result.claim) {
     return NextResponse.json({ error: "这不是你的名字" }, { status: 401 });
@@ -56,6 +59,9 @@ export async function POST(req: Request, ctx: Ctx) {
         return NextResponse.json({ error: "先走进小屋" }, { status: 401 });
       }
       const data = await restoreRoom(id, body.room);
+      if ((data.clearedSeats ?? []).includes(sessionForRoom.displayName)) {
+        return NextResponse.json({ error: SEAT_CLEARED }, { status: 401 });
+      }
       return asRoom(data, sessionForRoom.displayName);
     }
 

@@ -174,6 +174,7 @@ export type Room = {
   pats: Pat[];
   cat: CatState;
   games: GameDesk;
+  clearedSeats: string[];
 };
 
 export type RoomAction =
@@ -207,6 +208,7 @@ export type RoomAction =
   | { type: "setKnowMe"; displayName: string; promptId: string; answer: string }
   | { type: "guessKnowMe"; displayName: string; target: string; promptId: string; guess: string }
   | { type: "gift"; displayName: string; target: string; kind: string; note?: string }
+  | { type: "clearSeat"; displayName: string; target: string }
   | { type: "startRps"; displayName: string }
   | { type: "joinRps"; displayName: string }
   | { type: "lockRps"; displayName: string; pick: RpsPick }

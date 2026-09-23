@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { backupHasMore, readBackup, writeBackup } from "./backup";
 import { readSession, writeSession } from "./session";
+import { SEAT_CLEARED } from "./constants";
 import type { ClientAction, Room } from "./types";
 
 export function useRoom(roomId: string, displayName: string | null) {
@@ -111,7 +112,10 @@ export function useRoom(roomId: string, displayName: string | null) {
       }
     });
     const timer = setInterval(() => {
-      refresh().catch(() => undefined);
+      refresh().catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : "";
+        if (!cancelled && message === SEAT_CLEARED) setError(message);
+      });
     }, 2500);
     return () => {
       cancelled = true;
@@ -131,8 +135,9 @@ export function useRoom(roomId: string, displayName: string | null) {
         const listed = latest.members.some((m) => m.displayName === displayName);
         if (listed) return;
         await act({ type: "checkin" });
-      } catch {
-        // Retry on the next poll cycle.
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "";
+        if (!cancelled && message === SEAT_CLEARED) setError(message);
       }
     }
 

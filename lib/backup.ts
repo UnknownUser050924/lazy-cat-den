@@ -62,7 +62,13 @@ function memberHasMore(local: Member, server: Member | undefined) {
 
 export function backupHasMore(local: Room, server: Room) {
   if (local.id !== server.id) return false;
-  if ((local.members ?? []).some((member) => memberHasMore(member, server.members?.find((item) => item.displayName === member.displayName)))) {
+  const cleared = new Set(server.clearedSeats ?? []);
+  if (
+    (local.members ?? []).some((member) => {
+      if (cleared.has(member.displayName)) return false;
+      return memberHasMore(member, server.members?.find((item) => item.displayName === member.displayName));
+    })
+  ) {
     return true;
   }
   if (idsMissing(local.questions, server.questions)) return true;
@@ -96,7 +102,12 @@ export function backupHasMore(local: Room, server: Room) {
   if ((local.cat?.lastToy ?? 0) > (server.cat?.lastToy ?? 0)) return true;
   if ((local.cat?.lastFeed ?? 0) > (server.cat?.lastFeed ?? 0)) return true;
   if ((local.cat?.lastCheckin ?? 0) > (server.cat?.lastCheckin ?? 0)) return true;
-  if ((local.members ?? []).some((member) => !(server.members ?? []).some((item) => item.displayName === member.displayName))) {
+  if (
+    (local.members ?? []).some(
+      (member) =>
+        !cleared.has(member.displayName) && !(server.members ?? []).some((item) => item.displayName === member.displayName),
+    )
+  ) {
     return true;
   }
   if (local.games?.active) {

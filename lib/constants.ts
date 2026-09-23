@@ -242,6 +242,7 @@ export const NOTE_COLORS = [
 ];
 
 export const SESSION_KEY = "lazy-cat-den-session";
+export const SEAT_CLEARED = "这个位子已经空出来了。请换一个名字进来。";
 
 export function slugifyRoom(name: string) {
   return name
