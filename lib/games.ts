@@ -28,13 +28,26 @@ export function rpsRoundWinners(picks: Partial<Record<string, RpsPick>>) {
   return entries.filter((item) => item[1] === win).map((item) => item[0]);
 }
 
-export function presentRoom(room: Room, viewer: string): Room {
+export function presentRoom(room: Room, viewer: string, admin = false): Room {
   const members = room.members.map((member) => {
     if (!("claimHash" in member) || !member.claimHash) return member;
     const { claimHash: _omit, ...rest } = member;
     return rest;
   });
-  const next = { ...room, members };
+  const cleared = new Set([...(room.clearedSeats ?? []), ...(room.banned ?? [])]);
+  const seated = members.filter((member) => !cleared.has(member.displayName));
+  const away = members.filter((member) => cleared.has(member.displayName));
+  const memories = admin
+    ? room.memories ?? []
+    : (room.memories ?? []).filter((item) => !cleared.has(item.actor));
+  const next: Room = {
+    ...room,
+    members: seated,
+    memories,
+    clearedSeats: admin ? [...(room.clearedSeats ?? [])] : [],
+    banned: admin ? [...(room.banned ?? [])] : [],
+    ...(admin ? { away } : {}),
+  };
   const active = next.games?.active;
   if (!active || active.status !== "picking") return next;
   const picks: RpsSession["picks"] = {};

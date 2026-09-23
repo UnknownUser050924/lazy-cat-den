@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { slugifyRoom, SEAT_CLEARED } from "@/lib/constants";
+import { slugifyRoom, SEAT_CLEARED, SEAT_BANNED } from "@/lib/constants";
+import { isKeeper } from "@/lib/keepers";
 import { sessionCookie, sessionFromRequest } from "@/lib/session";
 import { presentRoom } from "@/lib/games";
 import { applyAction, notePresence, restoreRoom } from "@/lib/store";
@@ -10,7 +11,9 @@ export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ room: string }> };
 
 function asRoom(data: Room, viewer: string, extra?: { room: string; displayName: string; claim?: string }) {
-  const response = NextResponse.json(presentRoom(data, viewer));
+  const admin = isKeeper(viewer);
+  const response = NextResponse.json(presentRoom(data, viewer, admin));
+  if (admin) response.headers.set("X-LCD-Admin", "1");
   if (extra?.claim) {
     response.headers.set("X-LCD-Claim", extra.claim);
     response.headers.append("Set-Cookie", sessionCookie({ room: extra.room, displayName: extra.displayName, claim: extra.claim }));
@@ -29,6 +32,9 @@ export async function GET(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "先走进小屋" }, { status: 401 });
   }
   const result = await notePresence(id, session.displayName, session.claim);
+  if ((result.room.banned ?? []).includes(session.displayName)) {
+    return NextResponse.json({ error: SEAT_BANNED }, { status: 401 });
+  }
   if ((result.room.clearedSeats ?? []).includes(session.displayName)) {
     return NextResponse.json({ error: SEAT_CLEARED }, { status: 401 });
   }
@@ -59,6 +65,9 @@ export async function POST(req: Request, ctx: Ctx) {
         return NextResponse.json({ error: "先走进小屋" }, { status: 401 });
       }
       const data = await restoreRoom(id, body.room);
+      if ((data.banned ?? []).includes(sessionForRoom.displayName)) {
+        return NextResponse.json({ error: SEAT_BANNED }, { status: 401 });
+      }
       if ((data.clearedSeats ?? []).includes(sessionForRoom.displayName)) {
         return NextResponse.json({ error: SEAT_CLEARED }, { status: 401 });
       }

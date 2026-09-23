@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { Sidebar } from "@/components/Sidebar";
 import { navHints } from "@/lib/activity";
-import { SEAT_CLEARED, slugifyRoom } from "@/lib/constants";
+import { isForcedOut, slugifyRoom } from "@/lib/constants";
 import { clearSession, readSession, writeSession } from "@/lib/session";
 import { useRoom } from "@/lib/use-room";
 import { skyPhase } from "@/lib/cottage";
@@ -19,6 +19,7 @@ type RoomContextValue = {
   room: Room | null;
   error: string | null;
   busy: boolean;
+  admin: boolean;
   act: (action: ClientAction) => Promise<Room>;
   setError: (value: string | null) => void;
 };
@@ -59,7 +60,7 @@ export function RoomShell({
   }, [roomId, router]);
 
   useEffect(() => {
-    if (roomState.error !== SEAT_CLEARED) return;
+    if (!isForcedOut(roomState.error)) return;
     clearSession();
     router.replace(`/?room=${encodeURIComponent(slugifyRoom(roomId) || roomId)}`);
   }, [roomId, roomState.error, router]);
@@ -83,7 +84,7 @@ export function RoomShell({
       }}
     >
       <div className="min-h-dvh md:grid md:grid-cols-[13.5rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)]">
-        <Sidebar room={roomId} hints={hints} />
+        <Sidebar room={roomId} hints={hints} admin={roomState.admin} />
         <div className="min-w-0">
           <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--cream)_88%,transparent)] px-4 py-3 text-ink backdrop-blur-md">
             <div>
@@ -101,6 +102,15 @@ export function RoomShell({
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {roomState.admin ? (
+                <button
+                  type="button"
+                  onClick={() => router.push(`/room/${encodeURIComponent(roomId)}/keep`)}
+                  className="rounded-full border border-[var(--line)] bg-card px-3 py-1 text-xs text-muted md:hidden"
+                >
+                  看管
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => router.push(`/room/${encodeURIComponent(roomId)}/corner`)}

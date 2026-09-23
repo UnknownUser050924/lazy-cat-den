@@ -48,7 +48,8 @@ export default function CornerPage() {
 
   if (!room) return <p className="text-center text-muted">推开角落的门…</p>;
 
-  const member = room.members.find((item) => item.displayName === who) ?? room.members.find((item) => item.displayName === displayName);
+  const people = [...room.members, ...(room.away ?? [])];
+  const member = people.find((item) => item.displayName === who) ?? people.find((item) => item.displayName === displayName);
   if (!member) return <p className="text-sm text-muted">先进入小屋。</p>;
   const mine = member.displayName === displayName;
   const form = CAT_FORMS.find((item) => item.id === member.profile.formId) ?? CAT_FORMS[0];
@@ -63,9 +64,9 @@ export default function CornerPage() {
         <p className="text-sm text-muted">{form.zh} · {form.line}</p>
       </header>
 
-      {room.members.length > 1 ? (
+      {people.length > 1 ? (
         <div className="flex justify-center gap-2">
-          {room.members.map((item) => (
+          {people.map((item) => (
             <button
               key={item.displayName}
               type="button"

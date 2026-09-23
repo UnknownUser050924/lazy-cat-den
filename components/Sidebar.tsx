@@ -24,9 +24,11 @@ const MORE = [
 export function Sidebar({
   room,
   hints,
+  admin = false,
 }: {
   room: string;
   hints: { qa: boolean; games: boolean; letter: boolean };
+  admin?: boolean;
 }) {
   const pathname = usePathname();
   const base = `/room/${encodeURIComponent(room)}`;
@@ -61,6 +63,16 @@ export function Sidebar({
             markLabel={item.hint === "games" ? "有一局在等" : item.hint === "letter" ? "有还没拆的信" : ""}
           />
         ))}
+        {admin ? (
+          <NavLink
+            href={`${base}/keep`}
+            active={pathname.startsWith(`${base}/keep`)}
+            zh="看管"
+            en="Keep"
+            mark={false}
+            markLabel=""
+          />
+        ) : null}
       </nav>
     </aside>
   );

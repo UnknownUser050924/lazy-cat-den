@@ -175,6 +175,8 @@ export type Room = {
   cat: CatState;
   games: GameDesk;
   clearedSeats: string[];
+  banned: string[];
+  away?: Member[];
 };
 
 export type RoomAction =
@@ -209,6 +211,11 @@ export type RoomAction =
   | { type: "guessKnowMe"; displayName: string; target: string; promptId: string; guess: string }
   | { type: "gift"; displayName: string; target: string; kind: string; note?: string }
   | { type: "clearSeat"; displayName: string; target: string }
+  | { type: "restoreSeat"; displayName: string; target: string }
+  | { type: "banPerson"; displayName: string; target: string }
+  | { type: "unbanPerson"; displayName: string; target: string }
+  | { type: "wipeCorner"; displayName: string; target: string }
+  | { type: "erasePerson"; displayName: string; target: string }
   | { type: "startRps"; displayName: string }
   | { type: "joinRps"; displayName: string }
   | { type: "lockRps"; displayName: string; pick: RpsPick }

@@ -62,12 +62,9 @@ function memberHasMore(local: Member, server: Member | undefined) {
 
 export function backupHasMore(local: Room, server: Room) {
   if (local.id !== server.id) return false;
-  const cleared = new Set(server.clearedSeats ?? []);
+  const cleared = new Set([...(server.clearedSeats ?? []), ...(server.banned ?? [])]);
   if (
-    (local.members ?? []).some((member) => {
-      if (cleared.has(member.displayName)) return false;
-      return memberHasMore(member, server.members?.find((item) => item.displayName === member.displayName));
-    })
+    (local.members ?? []).some((member) => memberHasMore(member, server.members?.find((item) => item.displayName === member.displayName)))
   ) {
     return true;
   }

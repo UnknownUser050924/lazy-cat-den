@@ -28,8 +28,6 @@ export function CottageRoom() {
   const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   const [moment, setMoment] = useState(0);
-  const [pendingSeat, setPendingSeat] = useState("");
-  const [clearingSeat, setClearingSeat] = useState("");
   const now = useNow();
   const sky = skyPhase(now);
 
@@ -71,20 +69,6 @@ export function CottageRoom() {
     setNote("");
   }
 
-  async function clearSeat(target: string) {
-    if (pendingSeat !== target) {
-      setPendingSeat(target);
-      return;
-    }
-    setClearingSeat(target);
-    try {
-      await act({ type: "clearSeat", target });
-      setPendingSeat("");
-    } finally {
-      setClearingSeat("");
-    }
-  }
-
   return (
     <div className="space-y-4">
       {sky === "night" ? <p className="text-center text-sm text-rose">Good night, {displayName}</p> : null}
@@ -121,9 +105,6 @@ export function CottageRoom() {
                 selfName={displayName}
                 now={now}
                 emptyLabel=""
-                pending={pendingSeat === member.displayName}
-                clearing={clearingSeat === member.displayName}
-                onClear={() => clearSeat(member.displayName)}
               />
             ))}
           </div>
@@ -142,9 +123,6 @@ export function CottageRoom() {
               selfName={displayName}
               now={now}
               emptyLabel="还可以邀请别人"
-              pending={beside ? pendingSeat === beside.displayName : false}
-              clearing={beside ? clearingSeat === beside.displayName : false}
-              onClear={beside ? () => clearSeat(beside.displayName) : undefined}
             />
             {rightExtras.map((member) => (
               <PartnerSpot
@@ -153,9 +131,6 @@ export function CottageRoom() {
                 selfName={displayName}
                 now={now}
                 emptyLabel=""
-                pending={pendingSeat === member.displayName}
-                clearing={clearingSeat === member.displayName}
-                onClear={() => clearSeat(member.displayName)}
               />
             ))}
           </div>
@@ -268,18 +243,12 @@ function PartnerSpot({
   now,
   emptyLabel,
   self = false,
-  pending = false,
-  clearing = false,
-  onClear,
 }: {
   member: Member | null;
   selfName: string;
   now: number;
   emptyLabel: string;
   self?: boolean;
-  pending?: boolean;
-  clearing?: boolean;
-  onClear?: () => void;
 }) {
   if (!member) {
     return (
@@ -300,19 +269,6 @@ function PartnerSpot({
       <p className="mt-1 text-sm text-rose-deep">{feeling ? feeling.zh : "还没说感觉"}</p>
       {form ? <p className="text-xs text-muted">{form.zh}</p> : null}
       {thought ? <p className="mt-2 text-sm leading-relaxed">“{thought}”</p> : null}
-      {onClear ? (
-        <div className="mt-3">
-          <button
-            type="button"
-            onClick={onClear}
-            disabled={clearing}
-            className="text-xs font-bold text-rose disabled:opacity-50"
-          >
-            {clearing ? "请出中…" : pending ? "确定请出？" : "让位子空出来"}
-          </button>
-          {pending ? <p className="mt-1 text-[11px] text-muted">这个名字不能再进这间小屋</p> : null}
-        </div>
-      ) : null}
     </div>
   );
 }

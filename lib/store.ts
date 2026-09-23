@@ -21,10 +21,12 @@ import {
   WALLS,
   WHO_DRAWS,
   SEAT_CLEARED,
+  SEAT_BANNED,
 } from "./constants";
 import { claimMatches, hashClaim, newClaim } from "./claim";
 import { promptForDate } from "./cottage";
 import { emptyGames, mergeGames, rpsRoundWinners, sanitizeGames } from "./games";
+import { isKeeper } from "./keepers";
 import { dateKey, daysBetweenKeys } from "./time";
 import { emptyProfile } from "./profile";
 import type { Member, Memory, Profile, Room, RoomAction } from "./types";
@@ -103,6 +105,7 @@ function emptyRoom(id: string): Room {
     pats: [],
     games: emptyGames(),
     clearedSeats: [],
+    banned: [],
     cat: {
       mood: 72,
       lastPat: 0,
@@ -215,7 +218,8 @@ function normalizeRoom(room: Room): Room {
   room.pats = room.pats ?? [];
   room.games = room.games ?? emptyGames();
   room.clearedSeats = [...new Set((room.clearedSeats ?? []).filter((name) => isRealName(name)))].slice(0, 48);
-  room.members = room.members.filter((member) => !room.clearedSeats.includes(member.displayName));
+  room.banned = [...new Set((room.banned ?? []).filter((name) => isRealName(name)))].slice(0, 48);
+  delete room.away;
   return room;
 }
 
@@ -273,7 +277,7 @@ function mergeRooms(left: Room, right: Room): Room {
   const room = normalizeRoom(cloneRoom(right));
   const other = normalizeRoom(cloneRoom(left));
   room.clearedSeats = [...new Set([...(other.clearedSeats ?? []), ...(room.clearedSeats ?? [])])].slice(0, 48);
-  room.members = mergeMembers(other.members, room.members).filter((member) => !room.clearedSeats.includes(member.displayName));
+  room.members = mergeMembers(other.members, room.members);
   room.questions = mergeQuestions(other.questions, room.questions);
   room.wishlist = mergeWishes(other.wishlist, room.wishlist);
   room.notes = mergeById(other.notes ?? [], room.notes ?? []);
@@ -407,7 +411,8 @@ function returningClaim(name: string, auth?: MemberAuth) {
 }
 
 function admitMember(room: Room, name: string, auth?: MemberAuth) {
-  if ((room.clearedSeats ?? []).includes(name)) throw new Error(SEAT_CLEARED);
+  if ((room.banned ?? []).includes(name)) throw new Error(SEAT_BANNED);
+  room.clearedSeats = (room.clearedSeats ?? []).filter((item) => item !== name);
   const now = Date.now();
   const firstToday = todayKey(room.cat.lastCheckin) !== todayKey(now);
   const existing = room.members.find((item) => item.displayName === name);
@@ -474,12 +479,26 @@ async function loadRoom(id: string): Promise<Room> {
   return cloneRoom(mem[id]);
 }
 
+function applySeatAuthority(merged: Room, current: Room): Room {
+  const live = cloneRoom(current).members;
+  const liveNames = new Set(live.map((item) => item.displayName));
+  const blocked = [...new Set([...(current.clearedSeats ?? []), ...(current.banned ?? [])])];
+  const erased = new Set(blocked.filter((name) => !liveNames.has(name)));
+  const extras = merged.members.filter((item) => !liveNames.has(item.displayName) && !erased.has(item.displayName));
+  merged.members = [...live, ...extras];
+  merged.clearedSeats = [...(current.clearedSeats ?? [])];
+  merged.banned = [...(current.banned ?? [])];
+  delete merged.away;
+  return normalizeRoom(merged);
+}
+
 async function saveRoom(room: Room) {
   const disk = await readDisk();
   const onDisk = disk[room.id];
-  const merged = onDisk ? mergeRooms(normalizeRoom(cloneRoom(onDisk)), room) : room;
-  store().rooms[merged.id] = cloneRoom(merged);
-  disk[merged.id] = cloneRoom(merged);
+  const merged = onDisk ? mergeRooms(normalizeRoom(cloneRoom(onDisk)), room) : cloneRoom(room);
+  const saved = applySeatAuthority(merged, room);
+  store().rooms[saved.id] = cloneRoom(saved);
+  disk[saved.id] = cloneRoom(saved);
   await writeDisk(disk);
 }
 
@@ -523,6 +542,49 @@ export async function getRoom(id: string): Promise<Room> {
 function takeNames(value: unknown, limit: number) {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.filter((item): item is string => typeof item === "string" && isRealName(item)))].slice(0, limit);
+}
+
+function requireKeeper(name: string) {
+  if (!isKeeper(name)) throw new Error("这页只有管理人能用");
+}
+
+function hideName(room: Room, name: string) {
+  if (!room.clearedSeats.includes(name)) room.clearedSeats.push(name);
+}
+
+function guardKeepTarget(actor: string, targetName: string) {
+  requireKeeper(actor);
+  if (!isRealName(targetName)) throw new Error("Write your own name");
+  if (targetName === actor) throw new Error("不能对自己这样做");
+  if (isKeeper(targetName)) throw new Error("管理人不能请出");
+}
+
+function erasePersonData(room: Room, name: string) {
+  if (!isRealName(name)) throw new Error("Write your own name");
+  room.members = room.members.filter((item) => item.displayName !== name);
+  if (!room.clearedSeats.includes(name)) room.clearedSeats.push(name);
+  room.notes = room.notes.filter((item) => item.author !== name);
+  room.messages = room.messages.filter((item) => item.author !== name);
+  room.letters = room.letters.filter((item) => item.from !== name);
+  room.gifts = room.gifts.filter((item) => item.from !== name && item.to !== name);
+  room.questions = room.questions.filter((item) => item.askedBy !== name);
+  for (const question of room.questions) {
+    if (question.answeredBy === name) {
+      question.answer = null;
+      question.answeredBy = null;
+    }
+  }
+  room.wishlist = room.wishlist.filter((item) => item.addedBy !== name);
+  room.events = room.events.filter((item) => item.addedBy !== name);
+  room.memories = room.memories.filter((item) => item.actor !== name);
+  room.pats = room.pats.filter((item) => item.name !== name);
+  for (const day of room.daily) {
+    day.answers = (day.answers ?? []).filter((item) => item.name !== name);
+  }
+  for (const member of room.members) {
+    member.profile.guesses = (member.profile.guesses ?? []).filter((item) => item.target !== name);
+  }
+  dropFromGame(room, name);
 }
 
 function dropFromGame(room: Room, name: string) {
@@ -572,6 +634,7 @@ function sanitizeRoom(id: string, raw: unknown): Room | null {
     pats: takeList(src.pats, 40),
     games: sanitizeGames(src.games),
     clearedSeats: takeNames(src.clearedSeats, 48),
+    banned: takeNames(src.banned, 48),
     cat: {
       mood: Number.isFinite(mood) ? Math.min(100, Math.max(4, mood)) : base.cat.mood,
       lastPat: typeof cat.lastPat === "number" ? cat.lastPat : 0,
@@ -627,6 +690,8 @@ export async function applyAction(
     if (!auth?.displayName) throw new Error(NEED_SESSION);
     name = cleanName(auth.displayName);
     issuedClaim = requireActor(room, name, auth.claim);
+    if ((room.banned ?? []).includes(name)) throw new Error(SEAT_BANNED);
+    if ((room.clearedSeats ?? []).includes(name)) throw new Error(SEAT_CLEARED);
 
     switch (action.type) {
       case "pat": {
@@ -1248,14 +1313,55 @@ export async function applyAction(
       }
       case "clearSeat": {
         const targetName = action.target.trim();
-        if (!isRealName(targetName)) throw new Error("Write your own name");
-        if (targetName === name) throw new Error("这是你自己的位子");
+        guardKeepTarget(name, targetName);
         if (!room.members.some((item) => item.displayName === targetName)) {
           throw new Error("他们已经不在了");
         }
-        room.members = room.members.filter((item) => item.displayName !== targetName);
-        if (!room.clearedSeats.includes(targetName)) room.clearedSeats.push(targetName);
+        hideName(room, targetName);
+        const member = room.members.find((item) => item.displayName === targetName);
+        if (member) delete member.claimHash;
         dropFromGame(room, targetName);
+        break;
+      }
+      case "restoreSeat": {
+        const targetName = action.target.trim();
+        guardKeepTarget(name, targetName);
+        if ((room.banned ?? []).includes(targetName)) throw new Error("先解开不让进");
+        room.clearedSeats = room.clearedSeats.filter((item) => item !== targetName);
+        const member = room.members.find((item) => item.displayName === targetName);
+        if (member) delete member.claimHash;
+        break;
+      }
+      case "banPerson": {
+        const targetName = action.target.trim();
+        guardKeepTarget(name, targetName);
+        hideName(room, targetName);
+        if (!room.banned.includes(targetName)) room.banned.push(targetName);
+        dropFromGame(room, targetName);
+        break;
+      }
+      case "unbanPerson": {
+        const targetName = action.target.trim();
+        guardKeepTarget(name, targetName);
+        room.banned = (room.banned ?? []).filter((item) => item !== targetName);
+        room.clearedSeats = room.clearedSeats.filter((item) => item !== targetName);
+        const member = room.members.find((item) => item.displayName === targetName);
+        if (member) delete member.claimHash;
+        break;
+      }
+      case "wipeCorner": {
+        const targetName = action.target.trim();
+        guardKeepTarget(name, targetName);
+        const member = room.members.find((item) => item.displayName === targetName);
+        if (!member) throw new Error("他们已经不在了");
+        member.profile = emptyProfile();
+        member.statusId = null;
+        break;
+      }
+      case "erasePerson": {
+        const targetName = action.target.trim();
+        guardKeepTarget(name, targetName);
+        erasePersonData(room, targetName);
         break;
       }
       default:

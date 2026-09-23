@@ -3,20 +3,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { backupHasMore, readBackup, writeBackup } from "./backup";
 import { readSession, writeSession } from "./session";
-import { SEAT_CLEARED } from "./constants";
+import { isForcedOut } from "./constants";
 import type { ClientAction, Room } from "./types";
 
 export function useRoom(roomId: string, displayName: string | null) {
   const [room, setRoom] = useState<Room | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [admin, setAdmin] = useState(false);
   const revision = useRef(0);
   const actSeq = useRef(0);
   const inflight = useRef(0);
   const restoring = useRef(false);
 
-  const persistClaim = useCallback(
+  const persistHeaders = useCallback(
     (res: Response) => {
+      setAdmin(res.headers.get("X-LCD-Admin") === "1");
       const headerClaim = res.headers.get("X-LCD-Claim");
       if (!headerClaim || !displayName) return;
       const session = readSession();
@@ -36,7 +38,7 @@ export function useRoom(roomId: string, displayName: string | null) {
       const payload = (await res.json().catch(() => null)) as { error?: string } | null;
       throw new Error(payload?.error || "Could not load room");
     }
-    persistClaim(res);
+    persistHeaders(res);
     let data = (await res.json()) as Room;
     const backup = readBackup(roomId);
     if (backup && !restoring.current && backupHasMore(backup, data)) {
@@ -63,7 +65,7 @@ export function useRoom(roomId: string, displayName: string | null) {
       setError(null);
     }
     return data;
-  }, [displayName, persistClaim, roomId]);
+  }, [displayName, persistHeaders, roomId]);
 
   const act = useCallback(
     async (action: ClientAction) => {
@@ -79,7 +81,7 @@ export function useRoom(roomId: string, displayName: string | null) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Something went wrong");
-        persistClaim(res);
+        persistHeaders(res);
         revision.current += 1;
         const next = data as Room;
         if (actSeq.current === mine) {
@@ -101,7 +103,7 @@ export function useRoom(roomId: string, displayName: string | null) {
         }
       }
     },
-    [displayName, persistClaim, roomId],
+    [displayName, persistHeaders, roomId],
   );
 
   useEffect(() => {
@@ -114,7 +116,7 @@ export function useRoom(roomId: string, displayName: string | null) {
     const timer = setInterval(() => {
       refresh().catch((err: unknown) => {
         const message = err instanceof Error ? err.message : "";
-        if (!cancelled && message === SEAT_CLEARED) setError(message);
+        if (!cancelled && isForcedOut(message)) setError(message);
       });
     }, 2500);
     return () => {
@@ -137,7 +139,7 @@ export function useRoom(roomId: string, displayName: string | null) {
         await act({ type: "checkin" });
       } catch (err) {
         const message = err instanceof Error ? err.message : "";
-        if (!cancelled && message === SEAT_CLEARED) setError(message);
+        if (!cancelled && isForcedOut(message)) setError(message);
       }
     }
 
@@ -150,5 +152,5 @@ export function useRoom(roomId: string, displayName: string | null) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayName, roomId, room?.members.length]);
 
-  return { room, error, busy, refresh, act, setError };
+  return { room, error, busy, refresh, act, setError, admin };
 }

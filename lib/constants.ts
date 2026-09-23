@@ -242,7 +242,12 @@ export const NOTE_COLORS = [
 ];
 
 export const SESSION_KEY = "lazy-cat-den-session";
-export const SEAT_CLEARED = "这个位子已经空出来了。请换一个名字进来。";
+export const SEAT_CLEARED = "管理人请你先离开了。想回来的话，再用这个名字走进来。";
+export const SEAT_BANNED = "这个名字暂时进不了小屋。";
+
+export function isForcedOut(message: string | null | undefined) {
+  return message === SEAT_CLEARED || message === SEAT_BANNED;
+}
 
 export function slugifyRoom(name: string) {
   return name
