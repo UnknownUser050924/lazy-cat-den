@@ -7,7 +7,7 @@ function splitNames(raw: string) {
 
 export function keeperNames() {
   const extra = splitNames(process.env.LCD_ADMIN_NAME ?? "");
-  return [...new Set(["宝宝", "无名", ...extra])];
+  return [...new Set(["无名", ...extra])].filter((name) => name !== "宝宝");
 }
 
 export function isKeeper(name: string) {

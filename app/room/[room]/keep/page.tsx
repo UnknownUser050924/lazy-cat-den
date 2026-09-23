@@ -148,7 +148,7 @@ function PersonCard({
         {kind !== "banned" || member.lastSeen ? (
           <Link
             href={`/room/${encodeURIComponent(roomId)}/corner?who=${encodeURIComponent(name)}`}
-            className="rounded-full bg-blush px-3 py-1 text-xs font-bold text-rose-deep"
+            className="shrink-0 rounded-full bg-blush px-3 py-1 text-xs font-bold text-rose-deep"
           >
             看角落
           </Link>
@@ -157,7 +157,6 @@ function PersonCard({
           <ActionButton
             label="请出"
             confirm="确定请出？"
-            hint="先请出小屋。他们还能用同一个名字走进来。"
             pending={pending === `clearSeat:${name}`}
             working={working === `clearSeat:${name}`}
             disabled={busy}
@@ -168,7 +167,6 @@ function PersonCard({
           <ActionButton
             label="让位子回来"
             confirm="确定放回来？"
-            hint="他们可以再坐进来，角落还是原来的。"
             pending={pending === `restoreSeat:${name}`}
             working={working === `restoreSeat:${name}`}
             disabled={busy}
@@ -179,7 +177,6 @@ function PersonCard({
           <ActionButton
             label="解开"
             confirm="确定解开？"
-            hint="解开之后，这个名字可以再走进小屋。"
             pending={pending === `unbanPerson:${name}`}
             working={working === `unbanPerson:${name}`}
             disabled={busy}
@@ -189,7 +186,6 @@ function PersonCard({
           <ActionButton
             label="不让进"
             confirm="确定不让进？"
-            hint="这个名字进不了小屋，直到你解开。"
             pending={pending === `banPerson:${name}`}
             working={working === `banPerson:${name}`}
             disabled={busy}
@@ -200,7 +196,6 @@ function PersonCard({
           <ActionButton
             label="清空角落"
             confirm="确定清空角落？"
-            hint="只清角落。便签、信和故事还在。"
             pending={pending === `wipeCorner:${name}`}
             working={working === `wipeCorner:${name}`}
             disabled={busy}
@@ -210,7 +205,6 @@ function PersonCard({
         <ActionButton
           label="删掉全部"
           confirm="确定删掉全部？"
-          hint="角落、便签、信和故事都会没。不能反悔。"
           pending={pending === `erasePerson:${name}`}
           working={working === `erasePerson:${name}`}
           disabled={busy}
@@ -218,6 +212,9 @@ function PersonCard({
           onClick={() => onRun("erasePerson", name)}
         />
       </div>
+      {pending.endsWith(`:${name}`) ? (
+        <p className="mt-2 text-[11px] leading-relaxed text-muted">{HINT[pending.split(":")[0] as KeepAction]}</p>
+      ) : null}
     </article>
   );
 }
@@ -225,7 +222,6 @@ function PersonCard({
 function ActionButton({
   label,
   confirm,
-  hint,
   pending,
   working,
   disabled,
@@ -234,7 +230,6 @@ function ActionButton({
 }: {
   label: string;
   confirm: string;
-  hint: string;
   pending: boolean;
   working: boolean;
   disabled: boolean;
@@ -242,18 +237,24 @@ function ActionButton({
   onClick: () => void;
 }) {
   return (
-    <span className="inline-flex flex-col">
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled || working}
-        className={`rounded-full px-3 py-1 text-xs font-bold disabled:opacity-50 ${
-          danger ? "bg-rose-deep text-white" : "border border-[var(--line)] bg-card text-ink"
-        }`}
-      >
-        {working ? "正在处理…" : pending ? confirm : label}
-      </button>
-      {pending ? <span className="mt-1 max-w-[12rem] text-[11px] text-muted">{hint}</span> : null}
-    </span>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || working}
+      className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold disabled:opacity-50 ${
+        danger ? "bg-rose-deep text-white" : "border border-[var(--line)] bg-card text-ink"
+      }`}
+    >
+      {working ? "正在处理…" : pending ? confirm : label}
+    </button>
   );
 }
+
+const HINT: Partial<Record<KeepAction, string>> = {
+  clearSeat: "先请出小屋。他们还能用同一个名字走进来。",
+  restoreSeat: "他们可以再坐进来，角落还是原来的。",
+  banPerson: "这个名字进不了小屋，直到你解开。",
+  unbanPerson: "解开之后，这个名字可以再走进小屋。",
+  wipeCorner: "只清角落。便签、信和故事还在。",
+  erasePerson: "角落、便签、信和故事都会没。不能反悔。",
+};
