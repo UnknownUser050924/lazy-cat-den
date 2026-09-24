@@ -69,7 +69,7 @@ export function CottageRoom() {
 
   return (
     <Page width="wide" className="space-y-5">
-      {sky === "night" ? <p className="text-center text-sm text-rose-deep">Good night, {displayName}</p> : null}
+      {sky === "night" ? <p className="text-center text-sm font-bold text-rose-deep">Good night, {displayName}</p> : null}
       {banner ? (
         <button type="button" onClick={() => setMoment((value) => value + 1)} className="pop-in w-full rounded-full bg-blush/80 px-4 py-2 text-sm font-bold text-rose-deep">
           {banner}
@@ -79,10 +79,10 @@ export function CottageRoom() {
       <section className="cottage-scene relative overflow-hidden rounded-[32px] px-3 pb-5 pt-4 sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <img
-            src="/assets/cottage/lazy-cat-den-window.jpg"
+            src={sky === "night" ? "/assets/cottage/lazy-cat-den-window-night.png" : "/assets/cottage/lazy-cat-den-window.png"}
             alt=""
-            width={640}
-            height={640}
+            width={800}
+            height={800}
             draggable={false}
             aria-hidden="true"
             className="cottage-window-art"
@@ -134,7 +134,7 @@ export function CottageRoom() {
           <RoomObject href={`${base}/qa`} label="问答纸" caption="问答" icon={<PaperIcon />} />
           <RoomObject href={`${base}/chat`} label="聊天" caption="聊天" icon={<ChatIcon />} />
         </div>
-        <p className="mt-2 text-center text-[11px] text-muted">完整地图在左边菜单里。这边只放眼前能做的几件小事。</p>
+        <p className="mt-2 text-center text-sm text-muted">完整地图在上面菜单里。这边只放眼前能做的几件小事。</p>
       </section>
 
       {firstVisit ? (
@@ -237,7 +237,7 @@ function PartnerSpot({
 }) {
   if (!member) {
     return (
-      <div className="rounded-[24px] border border-dashed border-[var(--line)] px-4 py-5 text-center text-sm text-muted">
+      <div className="member-spot rounded-[24px] border border-dashed border-[var(--line)] px-4 py-5 text-center text-sm text-muted">
         {emptyLabel}
       </div>
     );
@@ -246,7 +246,7 @@ function PartnerSpot({
   const form = CAT_FORMS.find((item) => item.id === member.profile.formId);
   const thought = momentText(member);
   return (
-    <div className={`min-w-0 rounded-[24px] bg-[color-mix(in_srgb,var(--card)_72%,transparent)] px-4 py-4 ${self ? "" : ""}`}>
+    <div className="member-spot min-w-0 rounded-[24px] px-4 py-4">
       <p className="text-[11px] text-muted">{self ? "我" : "小屋里"}</p>
       <p className="text-lg font-extrabold">{member.displayName}</p>
       <p className="text-xs text-muted">{presenceLabel(member, selfName, now)}</p>

@@ -1,13 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Nunito, Noto_Sans_SC } from "next/font/google";
+import { Noto_Sans_SC } from "next/font/google";
 import "./globals.css";
-
-const nunito = Nunito({
-  subsets: ["latin"],
-  variable: "--font-nunito",
-  display: "swap",
-});
 
 const noto = Noto_Sans_SC({
   subsets: ["latin"],
@@ -35,9 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${nunito.variable} ${noto.variable} font-sans antialiased`}>
-        {children}
-      </body>
+      <body className={`${noto.variable} font-sans antialiased`}>{children}</body>
     </html>
   );
 }

@@ -58,7 +58,7 @@ export default function ChatPage() {
             return (
               <div key={item.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[min(80%,28rem)] rounded-[22px] px-4 py-2 ${
+                  className={`chat-bubble max-w-[min(80%,28rem)] rounded-[22px] px-4 py-2 ${
                     mine ? "bg-blush text-ink" : "bg-card text-ink shadow-sm"
                   }`}
                 >
@@ -76,7 +76,7 @@ export default function ChatPage() {
 
       {error ? <p className="mt-3 text-sm text-rose-deep">{error}</p> : null}
 
-      <form onSubmit={send} className="sticky bottom-0 z-[1] -mx-1 mt-4 flex gap-2 bg-[color-mix(in_srgb,var(--cream)_94%,transparent)] py-3 backdrop-blur-md">
+      <form onSubmit={send} className="composer sticky bottom-0 z-[1] -mx-1 mt-4 flex gap-2 bg-[color-mix(in_srgb,var(--cream)_94%,transparent)] py-3 backdrop-blur-md">
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}

@@ -62,7 +62,7 @@ export function NavDrawer({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-40 lg:hidden" role="presentation">
+    <div className="fixed inset-0 z-40 min-[68rem]:hidden" role="presentation">
       <button type="button" className="absolute inset-0 bg-[rgba(74,59,54,0.38)]" aria-label="关闭菜单" onClick={onClose} />
       <div
         id="room-nav-drawer"

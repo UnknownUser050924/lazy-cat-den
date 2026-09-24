@@ -153,6 +153,14 @@ export function IconMenu() {
   );
 }
 
+export function IconChevron() {
+  return (
+    <Icon>
+      <path d="M8 10.5 12 14.5 16 10.5" {...stroke} />
+    </Icon>
+  );
+}
+
 export function IconClose() {
   return (
     <Icon label="关闭">

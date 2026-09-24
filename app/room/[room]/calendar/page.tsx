@@ -43,13 +43,13 @@ export default function CalendarPage() {
   return (
     <Page width="wide" className="space-y-5">
       <header className="flex items-center justify-between gap-3">
-        <button onClick={() => setCursor(new Date(year, month - 1, 1))} className="text-sm text-rose">
+        <button onClick={() => setCursor(new Date(year, month - 1, 1))} className="text-sm font-bold text-rose-deep">
           上一月
         </button>
         <h1 className="text-xl font-extrabold">
           {year} / {month + 1}
         </h1>
-        <button onClick={() => setCursor(new Date(year, month + 1, 1))} className="text-sm text-rose">
+        <button onClick={() => setCursor(new Date(year, month + 1, 1))} className="text-sm font-bold text-rose-deep">
           下一月
         </button>
       </header>
