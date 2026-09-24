@@ -45,7 +45,7 @@ export function ProfileCard({
         marginInline: "auto",
       }}
     >
-      <div ref={fxRef} />
+      <div ref={fxRef} className="lcd-effect" />
       <div className="lcd-card-content">
         <div className="lcd-card-top">
           <span className="lcd-room-tag">懒猫小屋</span>

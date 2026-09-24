@@ -37,6 +37,8 @@
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
+  position: relative;
+  z-index: 7;
 }
 
 .lcd-room-tag,
@@ -65,10 +67,12 @@
 
 .lcd-avatar-wrap {
   position: relative;
-  width: clamp(118px, 34%, 168px);
+  width: clamp(148px, 38%, 184px);
   aspect-ratio: 1;
-  margin: clamp(28px, 7vw, 72px) auto 12px;
+  margin: clamp(18px, 5vw, 48px) auto 12px;
   flex: none;
+  overflow: visible;
+  z-index: 7;
 }
 
 .lcd-avatar-base {
@@ -98,10 +102,11 @@
 
 .lcd-frame {
   position: absolute;
-  inset: -11%;
-  width: 122%;
-  height: 122%;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  object-position: center;
   pointer-events: none;
   filter: drop-shadow(0 5px 7px #46354b36);
 }
@@ -114,6 +119,8 @@
   box-shadow: 0 8px 22px #3a263c24;
   backdrop-filter: blur(14px);
   color: #342936;
+  position: relative;
+  z-index: 7;
 }
 
 .lcd-card-info h2 {
@@ -141,7 +148,6 @@
   z-index: 4;
   overflow: hidden;
   pointer-events: none;
-  contain: paint;
 }
 
 .lcd-effect__particle {
@@ -156,27 +162,27 @@
 
 .lcd-effect--fireflies .lcd-effect__particle {
   border-radius: 50%;
-  background: #fff9c5;
-  box-shadow: 0 0 8px 3px #f4eaa398, 0 0 23px 8px #eeeb9b68;
+  background: #fffce0;
+  box-shadow: 0 0 12px 5px #f6e27ae6, 0 0 30px 12px #efe38acc;
   animation: lcd-float var(--dur) ease-in-out var(--d) infinite alternate;
 }
 
 .lcd-effect--petals .lcd-effect__particle {
-  width: calc(var(--sz) * 1.8);
+  width: calc(var(--sz) * 2.1);
   height: var(--sz);
   border-radius: 80% 0 75% 20%;
-  background: linear-gradient(125deg, #fff0ea, #e98cae);
-  box-shadow: 0 0 3px #d382a369;
+  background: linear-gradient(125deg, #fff5f0, #ef7ea8 70%);
+  box-shadow: 0 0 8px #d382a399;
   animation: lcd-fall var(--dur) linear var(--d) infinite;
   top: -16%;
 }
 
 .lcd-effect--comets .lcd-effect__particle {
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 9px 3px #fffbdd, -15px 9px 10px 1px #e0c2ff88;
+  box-shadow: 0 0 12px 4px #fffbdd, -22px 12px 14px 2px #e0c2ffaa;
   animation: lcd-comet var(--dur) ease-in-out var(--d) infinite;
 }
 
@@ -190,29 +196,30 @@
   top: -30%;
   transform: rotate(-18deg);
   border-radius: 50%;
-  background: conic-gradient(from 130deg, transparent, #8de4d347, #c39ce859, #ffcba146, transparent 74%);
-  filter: blur(26px);
+  background: conic-gradient(from 130deg, transparent, #8de4d368, #c39ce878, #ffcba168, transparent 74%);
+  filter: blur(22px);
   animation: lcd-aurora 9s ease-in-out infinite alternate;
+  opacity: 0.92;
 }
 
 .lcd-effect--aurora::after {
   top: 38%;
   left: 13%;
-  background: conic-gradient(from 70deg, transparent, #f9c8e651, #9dc9e87a, transparent 66%);
+  background: conic-gradient(from 70deg, transparent, #f9c8e668, #9dc9e88a, transparent 66%);
   animation-delay: -5s;
 }
 
 .lcd-effect--aurora .lcd-effect__particle {
   border-radius: 50%;
   background: #fffdf5;
-  box-shadow: 0 0 10px 3px #e5fff9;
+  box-shadow: 0 0 12px 4px #e5fff9;
   animation: lcd-float var(--dur) ease-in-out var(--d) infinite alternate;
 }
 
 .lcd-effect--embers .lcd-effect__particle {
   border-radius: 50%;
-  background: #ffde9f;
-  box-shadow: 0 0 9px 3px #ff9b5b99;
+  background: #ffd27a;
+  box-shadow: 0 0 12px 5px #ff8a4ccc;
   animation: lcd-rise var(--dur) ease-out var(--d) infinite;
   top: 106%;
 }
@@ -225,15 +232,15 @@
   left: 23%;
   top: 12%;
   border-radius: 50%;
-  border: 1px solid #fff5db8c;
-  box-shadow: 0 0 18px #ffe9ba5e, inset 0 0 19px #ffe9ba46;
+  border: 1.5px solid #fff5dbb8;
+  box-shadow: 0 0 22px #ffe9ba88, inset 0 0 22px #ffe9ba66;
   transform: rotate(-18deg) scaleY(0.64);
 }
 
 .lcd-effect--moonorbit .lcd-effect__particle {
   border-radius: 50%;
   background: #fff3cc;
-  box-shadow: 0 0 9px 3px #ffedc5a3;
+  box-shadow: 0 0 12px 4px #ffedc5cc;
   animation: lcd-orbit var(--dur) ease-in-out var(--d) infinite alternate;
 }
 

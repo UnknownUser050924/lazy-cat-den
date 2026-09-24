@@ -308,6 +308,7 @@ html[data-sky="night"] .cottage-scene .room-object {
   box-shadow: 0 0 0 0 transparent;
 }
 
+html[data-sky="afternoon"] .cottage-lamp,
 html[data-sky="evening"] .cottage-lamp,
 html[data-sky="night"] .cottage-lamp {
   background: #ffd78a;
@@ -462,23 +463,49 @@ dialog.sheet::backdrop {
   background: #ead8c8;
 }
 
-.cottage-stage-bg {
+.cottage-stage-bg,
+.cottage-fg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: center;
   pointer-events: none;
   user-select: none;
 }
 
-.cottage-seat {
+.cottage-stage-bg {
+  object-fit: fill;
+}
+
+.cottage-fg {
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: 0 0;
+}
+
+.cottage-fg-table {
+  z-index: 6;
+  clip-path: polygon(34% 61%, 66.8% 59.6%, 69.4% 71.6%, 66.6% 83.6%, 50.4% 86.6%, 34.2% 82.8%, 31.4% 71.2%);
+}
+
+.cottage-fg-pouf {
+  z-index: 7;
+  clip-path: ellipse(15.6% 13.4% at 86.4% 91.2%);
+}
+
+.cottage-fg-left-arm {
+  z-index: 9;
+  clip-path: polygon(16.4% 60.4%, 25.2% 64.2%, 26.2% 76.8%, 22.8% 82.4%, 17.2% 78.6%, 16% 65%);
+}
+
+.cottage-fg-bench {
+  z-index: 3;
+  clip-path: polygon(25.4% 57.2%, 32.8% 56%, 33.4% 72.4%, 26.2% 73.6%);
+}
+
+.cottage-person {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
+  display: block;
   background: none;
   border: 0;
   padding: 0;
@@ -486,59 +513,180 @@ dialog.sheet::backdrop {
   color: inherit;
 }
 
-.cottage-seat:focus-visible {
+.cottage-person:focus-visible {
   outline: 3px solid var(--rose-deep);
   outline-offset: 4px;
   border-radius: 1.2rem;
 }
 
-.cottage-seat-window { left: 14%; top: 26%; width: 22%; height: 44%; z-index: 2; }
-.cottage-seat-sofa { left: 39%; top: 30%; width: 30%; height: 42%; z-index: 3; }
-.cottage-seat-left { left: 1.5%; top: 48%; width: 27%; height: 50%; z-index: 5; }
-.cottage-seat-right { left: 72%; top: 40%; width: 26%; height: 52%; z-index: 4; }
+.cottage-person-window {
+  left: 15.2%;
+  top: 26%;
+  width: 15.8%;
+  height: 31.6%;
+  z-index: 4;
+}
+
+.cottage-person-sofa {
+  left: 51.6%;
+  top: 30.8%;
+  width: 22%;
+  height: 29.2%;
+  z-index: 3;
+}
+
+.cottage-person-left {
+  left: 0;
+  top: 40.6%;
+  width: 25.2%;
+  height: 57.2%;
+  z-index: 8;
+}
+
+.cottage-person-right {
+  left: 80.4%;
+  top: 36.2%;
+  width: 19.2%;
+  height: 41.6%;
+  z-index: 5;
+}
 
 .cottage-figure {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  max-height: 86%;
+  height: 100%;
   object-fit: contain;
-  object-position: bottom center;
+  object-position: center bottom;
   pointer-events: none;
-  filter: drop-shadow(0 10px 12px rgba(60, 38, 44, 0.28));
+  filter: drop-shadow(0 8px 10px rgba(60, 38, 44, 0.22));
 }
 
-.cottage-seat-window .cottage-figure { max-height: 90%; }
-.cottage-seat-sofa .cottage-figure { max-height: 84%; }
-.cottage-seat-left .cottage-figure,
-.cottage-seat-right .cottage-figure { max-height: 94%; }
-.cottage-seat-window .cottage-char-left-chair,
-.cottage-seat-window .cottage-char-right-chair { max-height: 78%; transform: translateY(8%); }
-.cottage-seat-sofa .cottage-char-window-seat { max-height: 80%; }
-.cottage-seat-left .cottage-char-window-seat,
-.cottage-seat-left .cottage-char-sofa,
-.cottage-seat-right .cottage-char-window-seat,
-.cottage-seat-right .cottage-char-sofa { max-height: 78%; transform: translateY(6%); }
+.cottage-person-window .cottage-figure {
+  object-position: 62% 100%;
+  transform: scale(0.92);
+  transform-origin: 72% 94%;
+}
+
+.cottage-person-sofa .cottage-figure {
+  object-position: 48% 100%;
+}
+
+.cottage-person-left .cottage-figure {
+  object-position: 42% 94%;
+  transform: scale(0.96);
+  transform-origin: 40% 70%;
+}
+
+.cottage-person-right .cottage-char-left-chair {
+  object-position: 46% 96%;
+}
+
+.cottage-person-right .cottage-figure {
+  object-position: 52% 98%;
+}
+
+.cottage-person-left .cottage-char-right-chair {
+  object-position: 48% 96%;
+  transform: scale(0.94);
+  transform-origin: 45% 70%;
+}
+
+.cottage-person.is-marker .cottage-figure {
+  display: none;
+}
+
+.cottage-marker {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  display: flex;
+  width: 3.1rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.cottage-person.is-marker::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  width: 3.4rem;
+  height: 0.9rem;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(58, 38, 60, 0.2), transparent 70%);
+  pointer-events: none;
+}
+
+.cottage-person-window.is-marker .cottage-marker { bottom: 28%; }
+.cottage-person-sofa.is-marker .cottage-marker { bottom: 22%; }
+.cottage-person-left.is-marker .cottage-marker { left: 42%; bottom: 38%; }
+.cottage-person-right.is-marker .cottage-marker { left: 46%; bottom: 32%; }
+
+.cottage-marker .lcd-frame {
+  display: none;
+}
+
+.cottage-marker .lcd-avatar-wrap,
+.cottage-overflow-avatar {
+  width: 3.1rem !important;
+  margin: 0 !important;
+}
+
+.cottage-overflow-avatar .lcd-avatar-base,
+.cottage-marker .lcd-avatar-base {
+  font-size: 1.05rem;
+}
 
 .cottage-chip {
-  position: relative;
-  z-index: 2;
-  margin-bottom: 0.2rem;
-  max-width: 100%;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 3;
+  max-width: calc(100% + 1.5rem);
+  transform: translate(-50%, -10%);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--card) 88%, white);
+  background: color-mix(in srgb, var(--card) 90%, white);
   color: var(--paper-ink);
   border: 1px solid var(--line);
-  padding: 0.2rem 0.65rem;
-  font-size: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
   box-shadow: 0 6px 16px rgba(74, 59, 54, 0.12);
+  pointer-events: none;
+  white-space: nowrap;
 }
+
+.cottage-person-window .cottage-chip { top: -2%; left: 108%; transform: translate(-20%, 0); }
+.cottage-person-sofa .cottage-chip { top: -4%; left: 64%; }
+.cottage-person-left .cottage-chip { top: 2%; left: 22%; transform: translate(-50%, 0); }
+.cottage-person-right .cottage-chip { top: -4%; left: 78%; transform: translate(-50%, 0); }
 
 .cottage-overflow {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.6rem;
+}
+
+.cottage-overflow-label {
+  width: 100%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.cottage-overflow-card {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  border-radius: 1.15rem;
+  background: color-mix(in srgb, var(--card) 92%, white);
+  color: var(--paper-ink);
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.85rem 0.4rem 0.4rem;
+  text-align: left;
+  box-shadow: 0 8px 18px rgba(74, 59, 54, 0.08);
 }
 
 .nav-pill {

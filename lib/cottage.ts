@@ -1,16 +1,29 @@
 import { COUPLE_STATUSES, DAILY_PROMPTS, FEELINGS, GIFT_KINDS, ONLINE_MS } from "./constants";
+import { preferredSeats, SEATS, type SeatId } from "./look";
 import { dateKey, hourInCottage, shiftDateKey } from "./time";
 import type { Member, Room } from "./types";
 
-export type Sky = "day" | "evening" | "night";
+export type Sky = "day" | "afternoon" | "night";
 export type CatSpot = "window" | "center" | "person" | "sleep";
 export type CatPose = "idle" | "happy" | "sleepy" | "playing" | "eating" | "window" | "surprised";
 
 export function skyPhase(now: number | Date = Date.now()): Sky {
   const hour = hourInCottage(now);
   if (hour >= 19 || hour < 6) return "night";
-  if (hour >= 17) return "evening";
+  if (hour >= 12) return "afternoon";
   return "day";
+}
+
+export function skyLabel(sky: Sky) {
+  if (sky === "night") return "夜里";
+  if (sky === "afternoon") return "下午";
+  return "白天";
+}
+
+export function roomSkySrc(sky: Sky) {
+  if (sky === "night") return "/assets/cottage/lazy-cat-room-night.png";
+  if (sky === "afternoon") return "/assets/cottage/lazy-cat-room-afternoon.png";
+  return "/assets/cottage/lazy-cat-room-day.png";
 }
 
 export function isNight(now: number | Date = Date.now()) {
@@ -23,17 +36,43 @@ export function isHere(member: Member, now = Date.now()) {
   return now - member.lastSeen < ONLINE_MS;
 }
 
+export type SeatedPerson = {
+  seat: SeatId;
+  member: Member;
+  kind: "character" | "marker";
+};
+
 export function arrangeSeats(members: Member[], selfName = "", now = Date.now()) {
-  const present = hereNow(members, selfName, now).sort((a, b) => {
-    const seen = b.lastSeen - a.lastSeen;
-    if (seen) return seen;
-    return a.displayName.localeCompare(b.displayName, "zh");
-  });
-  const seats = ["window", "sofa", "left", "right"] as const;
-  return {
-    seated: present.slice(0, seats.length).map((member, index) => ({ seat: seats[index], member })),
-    overflow: present.slice(seats.length),
-  };
+  const present = hereNow(members, selfName, now).sort((a, b) => a.displayName.localeCompare(b.displayName, "zh"));
+  const seated: SeatedPerson[] = [];
+  const taken = new Set<SeatId>();
+  const overflow: Member[] = [];
+  const markers: Member[] = [];
+
+  for (const member of present) {
+    const prefs = preferredSeats(member.profile.characterId);
+    if (!prefs.length) {
+      markers.push(member);
+      continue;
+    }
+    const seat = prefs.find((item) => !taken.has(item));
+    if (seat) {
+      taken.add(seat);
+      seated.push({ seat, member, kind: "character" });
+    } else {
+      overflow.push(member);
+    }
+  }
+
+  for (const slot of SEATS) {
+    if (taken.has(slot.id)) continue;
+    const member = markers.shift();
+    if (!member) break;
+    taken.add(slot.id);
+    seated.push({ seat: slot.id, member, kind: "marker" });
+  }
+  overflow.push(...markers);
+  return { seated, overflow };
 }
 
 export function presenceLabel(member: Member, selfName: string, now = Date.now()) {
@@ -129,7 +168,7 @@ export function catPose(room: Room, sky: Sky, now = Date.now()): CatPose {
   if (memory?.kind === "wish-done" && now - memory.createdAt < 60_000) return "happy";
   if (room.cat.mood >= 85) return "happy";
   if (sky === "night" || room.cat.mood < 40) return "sleepy";
-  if (sky === "evening") return "window";
+  if (sky === "afternoon") return "window";
   if (room.cat.mood >= 70) return "happy";
   return "idle";
 }

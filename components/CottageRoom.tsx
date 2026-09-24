@@ -9,7 +9,7 @@ import { Page } from "@/components/Page";
 import { ProfileCard } from "@/components/ProfileCard";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 import { activityHref, publicActivity } from "@/lib/activity";
-import { arrangeSeats, cottageHeadline, peopleLine, roomDecor, skyPhase, tinyMoments, togetherStreak } from "@/lib/cottage";
+import { arrangeSeats, cottageHeadline, peopleLine, roomDecor, skyLabel, skyPhase, tinyMoments, togetherStreak } from "@/lib/cottage";
 import { clockLabel, dateLabel } from "@/lib/time";
 import { useNow } from "@/lib/use-now";
 
@@ -85,7 +85,7 @@ export function CottageRoom() {
           </div>
           <p className="text-[11px] text-muted">
             <time dateTime={new Date(now).toISOString()}>
-              {dateLabel(now)} {clockLabel(now)} · {sky === "day" ? "白天" : sky === "evening" ? "傍晚" : "夜里"}
+              {dateLabel(now)} {clockLabel(now)} · {skyLabel(sky)}
             </time>
             {decor.star ? <span aria-label="连续回来的小星星"> ✦</span> : null}
           </p>

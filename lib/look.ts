@@ -54,6 +54,20 @@ export const SEATS = [
   { id: "right", zh: "右边椅子" },
 ] as const;
 
+export const NATIVE_SEAT = {
+  "window-seat": "window",
+  sofa: "sofa",
+  "left-chair": "left",
+  "right-chair": "right",
+} as const;
+
+export const COMPATIBLE_SEATS = {
+  "window-seat": ["window"],
+  sofa: ["sofa"],
+  "left-chair": ["left", "right"],
+  "right-chair": ["right", "left"],
+} as const;
+
 export type CharacterId = (typeof CHARACTERS)[number]["id"] | "";
 export type FrameId = (typeof FRAMES)[number]["id"];
 export type ThemeId = (typeof THEMES)[number]["id"];
@@ -97,4 +111,10 @@ export function isAvatarKind(id: string): id is AvatarKind {
 
 export function figureClass(characterId: string) {
   return characterOf(characterId) ? `cottage-figure cottage-char-${characterId}` : "cottage-figure";
+}
+
+export function preferredSeats(characterId: string): SeatId[] {
+  const art = characterOf(characterId);
+  if (!art) return [];
+  return [...COMPATIBLE_SEATS[art.id]];
 }

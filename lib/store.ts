@@ -143,13 +143,13 @@ function mergeProfile(a: Profile, b: Profile, aNewer: boolean): Profile {
     objects: primary.objects.length ? primary.objects : other.objects,
     knowMe: mergeKnow(primary.knowMe, other.knowMe),
     guesses: [...guesses.values()],
-    characterId: primary.characterId || other.characterId,
-    avatarKind: primary.avatarKind || other.avatarKind,
-    avatarFile: primary.avatarFile || other.avatarFile,
-    frameId: primary.frameId || other.frameId,
-    themeId: primary.themeId || other.themeId,
-    effectId: primary.effectId && primary.effectId !== "none" ? primary.effectId : other.effectId || primary.effectId,
-    bio: primary.bio || other.bio,
+    characterId: aNewer ? primary.characterId : primary.characterId || other.characterId,
+    avatarKind: aNewer ? primary.avatarKind : primary.avatarKind || other.avatarKind,
+    avatarFile: aNewer ? primary.avatarFile : primary.avatarFile || other.avatarFile,
+    frameId: aNewer ? primary.frameId : primary.frameId || other.frameId,
+    themeId: aNewer ? primary.themeId : primary.themeId || other.themeId,
+    effectId: aNewer ? primary.effectId : primary.effectId || other.effectId,
+    bio: aNewer ? primary.bio : primary.bio || other.bio,
   };
 }
 
@@ -1142,6 +1142,7 @@ export async function applyAction(
         break;
       }
       case "setLook": {
+        touchMember(room, name);
         const profile = memberOf(room, name).profile;
         if (action.characterId !== "" && !isCharacterId(action.characterId)) throw new Error("Unknown character");
         if (!isAvatarKind(action.avatarKind)) throw new Error("Unknown picture");
@@ -1162,6 +1163,7 @@ export async function applyAction(
         break;
       }
       case "clearAvatar": {
+        touchMember(room, name);
         const profile = memberOf(room, name).profile;
         profile.avatarFile = "";
         if (profile.avatarKind === "upload") profile.avatarKind = "";
