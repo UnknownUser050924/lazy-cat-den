@@ -20,6 +20,7 @@ type RoomContextValue = {
   busy: boolean;
   admin: boolean;
   act: (action: ClientAction) => Promise<Room>;
+  refresh: () => Promise<Room>;
   setError: (value: string | null) => void;
 };
 

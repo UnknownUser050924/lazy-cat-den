@@ -11,6 +11,13 @@ export type Profile = {
   objects: string[];
   knowMe: { promptId: string; answer: string }[];
   guesses: { target: string; promptId: string; correct: boolean; at: number }[];
+  characterId: string;
+  avatarKind: string;
+  avatarFile: string;
+  frameId: string;
+  themeId: string;
+  effectId: string;
+  bio: string;
 };
 
 export type Member = {
@@ -266,6 +273,17 @@ export type RoomAction =
   | { type: "setThoughts"; displayName: string; thinking: string; need: string; want: string }
   | { type: "setGender"; displayName: string; gender: string }
   | { type: "setSignature"; displayName: string; signature: string }
+  | {
+      type: "setLook";
+      displayName: string;
+      characterId: string;
+      avatarKind: string;
+      frameId: string;
+      themeId: string;
+      effectId: string;
+      bio: string;
+    }
+  | { type: "clearAvatar"; displayName: string }
   | { type: "setPocket"; displayName: string; key: string; value: string }
   | { type: "setCorner"; displayName: string; wall: string; objects: string[] }
   | { type: "setKnowMe"; displayName: string; promptId: string; answer: string }

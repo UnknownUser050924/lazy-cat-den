@@ -2,18 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Page } from "@/components/Page";
+import { LookEditor } from "@/components/LookEditor";
+import { ProfileCard } from "@/components/ProfileCard";
 import { useRoomContext } from "@/components/RoomShell";
 import { CAT_FORMS, FEELINGS, POCKET_KEYS } from "@/lib/constants";
 import { feelingOf, momentText } from "@/lib/cottage";
 import { readSession } from "@/lib/session";
+import type { Room } from "@/lib/types";
 
 const FAVORITES = ["food", "music", "game", "animal"] as const;
 
 type Saver = () => Promise<boolean>;
 
 export default function CornerPage() {
-  const { room, displayName, act, error } = useRoomContext();
+  const { room, roomId, displayName, act, error, refresh, busy } = useRoomContext();
   const [who, setWho] = useState(displayName);
+  const [lookOpen, setLookOpen] = useState(false);
 
   useEffect(() => {
     const wanted = new URLSearchParams(window.location.search).get("who")?.trim();
@@ -86,6 +90,43 @@ export default function CornerPage() {
         <p className="text-lg">{member.profile.signature || "还没写签名"}</p>
         <p className="text-sm leading-relaxed text-muted">{thought ? `此刻 · ${thought}` : "此刻还是空的"}</p>
       </section>
+
+      {!lookOpen ? <ProfileCard roomId={roomId} member={member} selfName={displayName} compact /> : null}
+
+      {mine ? (
+        lookOpen ? (
+          <LookEditor
+            roomId={roomId}
+            member={member}
+            selfName={displayName}
+            busy={busy}
+            onCancel={() => setLookOpen(false)}
+            onSave={async (draft) => {
+              await act({ type: "setLook", ...draft });
+              setLookOpen(false);
+            }}
+            onUpload={async (file) => {
+              const body = new FormData();
+              body.set("file", file);
+              const res = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/avatar`, {
+                method: "POST",
+                body,
+                credentials: "include",
+              });
+              const data = (await res.json()) as Room & { error?: string };
+              if (!res.ok) throw new Error(data.error || "没存上");
+              await refresh();
+            }}
+            onClearPhoto={async () => {
+              await act({ type: "clearAvatar" });
+            }}
+          />
+        ) : (
+          <button type="button" onClick={() => setLookOpen(true)} className="soft-btn w-full rounded-full bg-rose-deep py-3 font-bold text-white">
+            编辑我的资料
+          </button>
+        )
+      ) : null}
 
       <section>
         <h2 className="mb-2 font-bold">喜欢的</h2>

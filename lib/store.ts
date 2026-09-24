@@ -28,6 +28,7 @@ import { promptForDate } from "./cottage";
 import { emptyGames, mergeGames, sanitizeGames } from "./games";
 import { applyPlay, tickGames } from "./play";
 import { isKeeper } from "./keepers";
+import { isAvatarKind, isCharacterId, isEffectId, isFrameId, isThemeId } from "./look";
 import { dateKey, daysBetweenKeys } from "./time";
 import { emptyProfile } from "./profile";
 import type { Member, Memory, Profile, Room, RoomAction } from "./types";
@@ -142,6 +143,13 @@ function mergeProfile(a: Profile, b: Profile, aNewer: boolean): Profile {
     objects: primary.objects.length ? primary.objects : other.objects,
     knowMe: mergeKnow(primary.knowMe, other.knowMe),
     guesses: [...guesses.values()],
+    characterId: primary.characterId || other.characterId,
+    avatarKind: primary.avatarKind || other.avatarKind,
+    avatarFile: primary.avatarFile || other.avatarFile,
+    frameId: primary.frameId || other.frameId,
+    themeId: primary.themeId || other.themeId,
+    effectId: primary.effectId && primary.effectId !== "none" ? primary.effectId : other.effectId || primary.effectId,
+    bio: primary.bio || other.bio,
   };
 }
 
@@ -1133,6 +1141,32 @@ export async function applyAction(
         memberOf(room, name).profile.signature = action.signature.trim().slice(0, 40);
         break;
       }
+      case "setLook": {
+        const profile = memberOf(room, name).profile;
+        if (action.characterId !== "" && !isCharacterId(action.characterId)) throw new Error("Unknown character");
+        if (!isAvatarKind(action.avatarKind)) throw new Error("Unknown picture");
+        if (!isFrameId(action.frameId)) throw new Error("Unknown frame");
+        if (!isThemeId(action.themeId)) throw new Error("Unknown theme");
+        if (!isEffectId(action.effectId)) throw new Error("Unknown effect");
+        profile.characterId = action.characterId;
+        profile.frameId = action.frameId;
+        profile.themeId = action.themeId;
+        profile.effectId = action.effectId;
+        profile.bio = action.bio.trim().slice(0, 80);
+        if (action.avatarKind === "upload") {
+          if (!profile.avatarFile) throw new Error("先选一张照片");
+          profile.avatarKind = "upload";
+        } else {
+          profile.avatarKind = action.avatarKind;
+        }
+        break;
+      }
+      case "clearAvatar": {
+        const profile = memberOf(room, name).profile;
+        profile.avatarFile = "";
+        if (profile.avatarKind === "upload") profile.avatarKind = "";
+        break;
+      }
       case "setPocket": {
         if (!POCKET_KEYS.some((item) => item.id === action.key)) throw new Error("Unknown pocket");
         const value = action.value.trim().slice(0, 40);
@@ -1289,3 +1323,22 @@ export async function applyAction(
     return { room: cloneRoom(room), claim: issuedClaim };
   });
 }
+
+export async function saveMemberAvatar(
+  id: string,
+  auth: MemberAuth,
+  fileId: string,
+): Promise<Room> {
+  return withLock(async () => {
+    if (!auth.displayName) throw new Error(NEED_SESSION);
+    const name = cleanName(auth.displayName);
+    const room = applyDecay(await loadRoom(id));
+    requireActor(room, name, auth.claim);
+    const profile = memberOf(room, name).profile;
+    profile.avatarFile = fileId;
+    profile.avatarKind = "upload";
+    await saveRoom(room);
+    return cloneRoom(room);
+  });
+}
+

@@ -14,5 +14,12 @@ export function emptyProfile(): Profile {
     objects: [],
     knowMe: [],
     guesses: [],
+    characterId: "",
+    avatarKind: "",
+    avatarFile: "",
+    frameId: "",
+    themeId: "",
+    effectId: "none",
+    bio: "",
   };
 }

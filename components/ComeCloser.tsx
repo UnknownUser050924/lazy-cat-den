@@ -5,14 +5,22 @@ import { useRoomContext } from "@/components/RoomShell";
 import { CLOSER_KINDS } from "@/lib/constants";
 import { closerReceivedLine, closerSentLine } from "@/lib/cottage";
 
-export function ComeCloser({ people }: { people: string[] }) {
+export function ComeCloser({
+  people,
+  prefer,
+  openToken = 0,
+}: {
+  people: string[];
+  prefer?: string;
+  openToken?: number;
+}) {
   const { room, displayName, act } = useRoomContext();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const seen = useRef(new Set<string>());
   const primed = useRef(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [note, setNote] = useState("");
-  const [to, setTo] = useState(people[0] ?? "");
+  const [to, setTo] = useState(prefer && people.includes(prefer) ? prefer : people[0] ?? "");
   const [localError, setLocalError] = useState("");
   const [sending, setSending] = useState(false);
   const [confirm, setConfirm] = useState("");
@@ -20,8 +28,17 @@ export function ComeCloser({ people }: { people: string[] }) {
   const partnerName = people.includes(to) ? to : people[0] ?? "";
 
   useEffect(() => {
-    if (!people.includes(to)) setTo(people[0] ?? "");
-  }, [people, to]);
+    setTo((cur) => {
+      if (prefer && people.includes(prefer)) return prefer;
+      if (people.includes(cur)) return cur;
+      return people[0] ?? "";
+    });
+  }, [people, prefer]);
+
+  useEffect(() => {
+    if (!openToken) return;
+    dialogRef.current?.showModal();
+  }, [openToken]);
 
   useEffect(() => {
     if (!room || primed.current) return;

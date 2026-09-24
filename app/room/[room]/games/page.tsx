@@ -8,6 +8,7 @@ import { MemoryBoard } from "@/components/games/MemoryBoard";
 import { RpsBoard } from "@/components/games/RpsBoard";
 import { SyncBoard } from "@/components/games/SyncBoard";
 import { useRoomContext } from "@/components/RoomShell";
+import { hereNow } from "@/lib/cottage";
 import { gameTitle } from "@/lib/games";
 import type { GameKind } from "@/lib/types";
 
@@ -59,7 +60,7 @@ export default function GamesPage() {
 
   const game = room?.games?.active ?? null;
   const playing = Boolean(game && game.status !== "done");
-  const names = room ? [...new Set(room.members.map((member) => member.displayName))] : [];
+  const present = room ? hereNow(room.members, displayName).length : 0;
 
   useEffect(() => {
     if (!room || !displayName || !game || game.status === "done") return;
@@ -83,10 +84,10 @@ export default function GamesPage() {
     <Page width="wide" className="space-y-4">
       <header>
         <h1 className="text-2xl font-extrabold">一起玩</h1>
-        <p className="text-sm text-muted">选一种玩法。谁在小屋里谁都能加入，一局只开一种。</p>
+        <p className="text-sm text-muted">选一种玩法。谁在小屋里谁都能加入，一局只开一种。每种都要至少 2 个人现在在这儿。</p>
       </header>
 
-      {names.length < 2 ? <p className="text-sm text-muted">等另一个人走进小屋，就可以一起玩。</p> : null}
+      {present < 2 ? <p className="text-sm text-muted">现在小屋里还不够 2 个人，等另一个人走进来就可以一起玩。</p> : null}
       {error ? <p className="text-sm text-rose-deep">{error}</p> : null}
 
       <div className="grid grid-cols-1 gap-3 @min-[36rem]:grid-cols-2">
@@ -109,7 +110,9 @@ export default function GamesPage() {
                   <span>
                     <span className="block font-extrabold text-ink">{card.zh}</span>
                     <span className="mt-1 block text-xs leading-relaxed text-muted">{card.text}</span>
-                    <span className="mt-2 block text-[11px] font-bold text-rose-deep">{card.players}</span>
+                    <span className="mt-2 block text-[11px] font-bold text-rose-deep">
+                      {active ? "进行中" : present < 2 ? "至少 2 人在场" : card.players}
+                    </span>
                   </span>
                 </span>
               </button>
@@ -121,7 +124,7 @@ export default function GamesPage() {
                 ) : (
                   <button
                     type="button"
-                    disabled={busy || playing || names.length < 2}
+                    disabled={busy || playing || present < 2}
                     onClick={() => start(card.id)}
                     className="rounded-full bg-rose-deep px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
                   >

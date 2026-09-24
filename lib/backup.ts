@@ -48,7 +48,12 @@ function memberHasMore(local: Member, server: Member | undefined) {
   if (text(local.profile?.gender) && !text(server.profile?.gender)) return true;
   if (text(local.profile?.thinking) && !text(server.profile?.thinking)) return true;
   if (text(local.profile?.need) && !text(server.profile?.need)) return true;
-  if (text(local.profile?.want) && !text(server.profile?.want)) return true;
+  if (text(local.profile?.bio) && !text(server.profile?.bio)) return true;
+  if (text(local.profile?.characterId) && !text(server.profile?.characterId)) return true;
+  if (text(local.profile?.frameId) && !text(server.profile?.frameId)) return true;
+  if (text(local.profile?.themeId) && !text(server.profile?.themeId)) return true;
+  if (text(local.profile?.effectId) && local.profile.effectId !== "none" && (!server.profile?.effectId || server.profile.effectId === "none")) return true;
+  if (text(local.profile?.avatarFile) && !text(server.profile?.avatarFile)) return true;
   if (text(local.profile?.formId) && local.profile.formId !== "sleepy" && server.profile?.formId === "sleepy") return true;
   if (text(local.profile?.wall) && local.profile.wall !== "cozy" && (!server.profile?.wall || server.profile.wall === "cozy")) {
     return true;

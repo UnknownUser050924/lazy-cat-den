@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./lcd-profile.css";
 
 :root {
   --cream: #fbf6f0;
@@ -448,4 +449,111 @@ dialog.sheet::backdrop {
 
 .game-soft {
   transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.cottage-stage {
+  position: relative;
+  width: 100%;
+  max-width: 70rem;
+  margin-inline: auto;
+  aspect-ratio: 1672 / 941;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: #ead8c8;
+}
+
+.cottage-stage-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cottage-seat {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.cottage-seat:focus-visible {
+  outline: 3px solid var(--rose-deep);
+  outline-offset: 4px;
+  border-radius: 1.2rem;
+}
+
+.cottage-seat-window { left: 14%; top: 26%; width: 22%; height: 44%; z-index: 2; }
+.cottage-seat-sofa { left: 39%; top: 30%; width: 30%; height: 42%; z-index: 3; }
+.cottage-seat-left { left: 1.5%; top: 48%; width: 27%; height: 50%; z-index: 5; }
+.cottage-seat-right { left: 72%; top: 40%; width: 26%; height: 52%; z-index: 4; }
+
+.cottage-figure {
+  width: 100%;
+  height: auto;
+  max-height: 86%;
+  object-fit: contain;
+  object-position: bottom center;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 12px rgba(60, 38, 44, 0.28));
+}
+
+.cottage-seat-window .cottage-figure { max-height: 90%; }
+.cottage-seat-sofa .cottage-figure { max-height: 84%; }
+.cottage-seat-left .cottage-figure,
+.cottage-seat-right .cottage-figure { max-height: 94%; }
+.cottage-seat-window .cottage-char-left-chair,
+.cottage-seat-window .cottage-char-right-chair { max-height: 78%; transform: translateY(8%); }
+.cottage-seat-sofa .cottage-char-window-seat { max-height: 80%; }
+.cottage-seat-left .cottage-char-window-seat,
+.cottage-seat-left .cottage-char-sofa,
+.cottage-seat-right .cottage-char-window-seat,
+.cottage-seat-right .cottage-char-sofa { max-height: 78%; transform: translateY(6%); }
+
+.cottage-chip {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 0.2rem;
+  max-width: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 88%, white);
+  color: var(--paper-ink);
+  border: 1px solid var(--line);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+  box-shadow: 0 6px 16px rgba(74, 59, 54, 0.12);
+}
+
+.cottage-overflow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.nav-pill {
+  border-radius: 999px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.nav-pill:hover {
+  background: color-mix(in srgb, var(--blush) 55%, transparent);
+}
+
+.nav-pill[aria-current="page"],
+.nav-pill[aria-expanded="true"],
+.nav-pill.is-open {
+  background: var(--blush);
+  color: var(--ink);
 }

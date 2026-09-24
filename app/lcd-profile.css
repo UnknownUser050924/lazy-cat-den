@@ -1,0 +1,288 @@
+.lcd-profile-card {
+  isolation: isolate;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 25px;
+  position: relative;
+  overflow: hidden;
+  background: #fff2e9 center / cover no-repeat;
+  box-shadow: 0 25px 65px #50344932, 0 0 0 1px #6b405f33;
+  color: #342936;
+}
+
+.lcd-profile-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid #fff9;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.lcd-card-content {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 22px 24px;
+}
+
+.lcd-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.lcd-room-tag,
+.lcd-live {
+  padding: 7px 11px;
+  border-radius: 40px;
+  background: #fffaf2b8;
+  color: #453442;
+  backdrop-filter: blur(8px);
+}
+
+.lcd-live {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.lcd-live::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6a9a73;
+  box-shadow: 0 0 0 3px #7ba8823d;
+}
+
+.lcd-avatar-wrap {
+  position: relative;
+  width: clamp(118px, 34%, 168px);
+  aspect-ratio: 1;
+  margin: clamp(28px, 7vw, 72px) auto 12px;
+  flex: none;
+}
+
+.lcd-avatar-base {
+  position: absolute;
+  inset: 13%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 34% 28%, #fffbe9, #c9889c 58%, #665071);
+  box-shadow: 0 5px 16px #3c263659;
+  color: #fff8ec;
+  font: 2.4rem/1 Georgia, "Songti SC", serif;
+}
+
+.lcd-avatar-base img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lcd-avatar-peach { background: radial-gradient(circle at 30% 24%, #fff6ea, #f3b7a4 62%, #c36b76); }
+.lcd-avatar-dusk { background: radial-gradient(circle at 30% 24%, #f4e4d6, #c9a0b4 58%, #6d4a63); }
+.lcd-avatar-mint { background: radial-gradient(circle at 30% 24%, #f3fff6, #a9d7c4 58%, #5e7d72); }
+.lcd-avatar-lilac { background: radial-gradient(circle at 30% 24%, #f7efff, #c5b0e0 58%, #6a5884); }
+.lcd-avatar-honey { background: radial-gradient(circle at 30% 24%, #fff6d8, #e8c07a 58%, #a56b3d); }
+
+.lcd-frame {
+  position: absolute;
+  inset: -11%;
+  width: 122%;
+  height: 122%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 5px 7px #46354b36);
+}
+
+.lcd-card-info {
+  margin-top: auto;
+  padding: 16px 18px;
+  border-radius: 19px;
+  background: #fff8eddb;
+  box-shadow: 0 8px 22px #3a263c24;
+  backdrop-filter: blur(14px);
+  color: #342936;
+}
+
+.lcd-card-info h2 {
+  font-family: Georgia, "Songti SC", "Noto Serif SC", serif;
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.25;
+}
+
+.lcd-card-info p {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  color: #493a49;
+}
+
+.lcd-card-info .lcd-signature {
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid #62435a3c;
+}
+
+.lcd-effect {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  pointer-events: none;
+  contain: paint;
+}
+
+.lcd-effect__particle {
+  position: absolute;
+  display: block;
+  left: var(--x);
+  top: var(--y);
+  width: var(--sz);
+  height: var(--sz);
+  will-change: transform, opacity;
+}
+
+.lcd-effect--fireflies .lcd-effect__particle {
+  border-radius: 50%;
+  background: #fff9c5;
+  box-shadow: 0 0 8px 3px #f4eaa398, 0 0 23px 8px #eeeb9b68;
+  animation: lcd-float var(--dur) ease-in-out var(--d) infinite alternate;
+}
+
+.lcd-effect--petals .lcd-effect__particle {
+  width: calc(var(--sz) * 1.8);
+  height: var(--sz);
+  border-radius: 80% 0 75% 20%;
+  background: linear-gradient(125deg, #fff0ea, #e98cae);
+  box-shadow: 0 0 3px #d382a369;
+  animation: lcd-fall var(--dur) linear var(--d) infinite;
+  top: -16%;
+}
+
+.lcd-effect--comets .lcd-effect__particle {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 9px 3px #fffbdd, -15px 9px 10px 1px #e0c2ff88;
+  animation: lcd-comet var(--dur) ease-in-out var(--d) infinite;
+}
+
+.lcd-effect--aurora::before,
+.lcd-effect--aurora::after {
+  content: "";
+  position: absolute;
+  width: 155%;
+  height: 78%;
+  left: -28%;
+  top: -30%;
+  transform: rotate(-18deg);
+  border-radius: 50%;
+  background: conic-gradient(from 130deg, transparent, #8de4d347, #c39ce859, #ffcba146, transparent 74%);
+  filter: blur(26px);
+  animation: lcd-aurora 9s ease-in-out infinite alternate;
+}
+
+.lcd-effect--aurora::after {
+  top: 38%;
+  left: 13%;
+  background: conic-gradient(from 70deg, transparent, #f9c8e651, #9dc9e87a, transparent 66%);
+  animation-delay: -5s;
+}
+
+.lcd-effect--aurora .lcd-effect__particle {
+  border-radius: 50%;
+  background: #fffdf5;
+  box-shadow: 0 0 10px 3px #e5fff9;
+  animation: lcd-float var(--dur) ease-in-out var(--d) infinite alternate;
+}
+
+.lcd-effect--embers .lcd-effect__particle {
+  border-radius: 50%;
+  background: #ffde9f;
+  box-shadow: 0 0 9px 3px #ff9b5b99;
+  animation: lcd-rise var(--dur) ease-out var(--d) infinite;
+  top: 106%;
+}
+
+.lcd-effect--moonorbit::before {
+  content: "";
+  position: absolute;
+  width: 54%;
+  aspect-ratio: 1;
+  left: 23%;
+  top: 12%;
+  border-radius: 50%;
+  border: 1px solid #fff5db8c;
+  box-shadow: 0 0 18px #ffe9ba5e, inset 0 0 19px #ffe9ba46;
+  transform: rotate(-18deg) scaleY(0.64);
+}
+
+.lcd-effect--moonorbit .lcd-effect__particle {
+  border-radius: 50%;
+  background: #fff3cc;
+  box-shadow: 0 0 9px 3px #ffedc5a3;
+  animation: lcd-orbit var(--dur) ease-in-out var(--d) infinite alternate;
+}
+
+@keyframes lcd-float {
+  0% { opacity: 0.15; transform: translate3d(-8px, 9px, 0) scale(0.55); }
+  50% { opacity: 0.9; transform: translate3d(8px, -15px, 0) scale(1.05); }
+  100% { opacity: 0.2; transform: translate3d(-3px, -29px, 0) scale(0.65); }
+}
+
+@keyframes lcd-fall {
+  0% { opacity: 0; transform: translate3d(-16px, -25px, 0) rotate(var(--rot)); }
+  12% { opacity: 0.8; }
+  83% { opacity: 0.75; }
+  100% { opacity: 0; transform: translate3d(54px, 570px, 0) rotate(620deg); }
+}
+
+@keyframes lcd-comet {
+  0%, 65% { opacity: 0; transform: translate3d(45px, -30px, 0) scale(0.5); }
+  73% { opacity: 1; }
+  91%, 100% { opacity: 0; transform: translate3d(-87px, 78px, 0) scale(1.1); }
+}
+
+@keyframes lcd-aurora {
+  to { transform: translate3d(8%, 14%, 0) rotate(19deg) scale(1.13); opacity: 0.73; }
+}
+
+@keyframes lcd-rise {
+  0% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.3); }
+  16% { opacity: 0.85; }
+  80% { opacity: 0.65; }
+  100% { opacity: 0; transform: translate3d(30px, -560px, 0) scale(0.7); }
+}
+
+@keyframes lcd-orbit {
+  from { opacity: 0.2; transform: translate3d(-15px, 10px, 0) scale(0.55); }
+  55% { opacity: 0.95; }
+  to { opacity: 0.4; transform: translate3d(31px, -30px, 0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lcd-effect__particle,
+  .lcd-effect::before,
+  .lcd-effect::after {
+    animation: none !important;
+    opacity: 0.38;
+    will-change: auto;
+  }
+  .lcd-effect--petals .lcd-effect__particle,
+  .lcd-effect--embers .lcd-effect__particle {
+    top: var(--y);
+  }
+}

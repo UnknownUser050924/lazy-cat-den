@@ -1,45 +1,42 @@
 "use client";
 
-import { FormEvent, useState, type ReactNode } from "react";
+import { FormEvent, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ComeCloser } from "@/components/ComeCloser";
+import { CottageScene } from "@/components/CottageScene";
 import { Page } from "@/components/Page";
+import { ProfileCard } from "@/components/ProfileCard";
 import { formatTime, useRoomContext } from "@/components/RoomShell";
 import { activityHref, publicActivity } from "@/lib/activity";
-import { CAT_FORMS } from "@/lib/constants";
-import { consoleState } from "@/lib/games";
-import {
-  cottageHeadline,
-  feelingOf,
-  momentText,
-  othersOf,
-  peopleLine,
-  presenceLabel,
-  roomDecor,
-  skyPhase,
-  tinyMoments,
-  togetherStreak,
-} from "@/lib/cottage";
+import { arrangeSeats, cottageHeadline, peopleLine, roomDecor, skyPhase, tinyMoments, togetherStreak } from "@/lib/cottage";
 import { clockLabel, dateLabel } from "@/lib/time";
 import { useNow } from "@/lib/use-now";
-import type { Member } from "@/lib/types";
 
 export function CottageRoom() {
   const { room, roomId, displayName, act, error } = useRoomContext();
+  const router = useRouter();
+  const cardRef = useRef<HTMLDialogElement>(null);
   const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   const [moment, setMoment] = useState(0);
+  const [openName, setOpenName] = useState<string | null>(null);
+  const [closer, setCloser] = useState({ token: 0, name: "" });
   const now = useNow();
   const sky = skyPhase(now);
+
+  useEffect(() => {
+    if (openName) cardRef.current?.showModal();
+    else cardRef.current?.close();
+  }, [openName]);
 
   if (!room) {
     return <p className="text-center text-muted">铺着垫子… warming the cushions…</p>;
   }
 
   const me = room.members.find((member) => member.displayName === displayName) ?? null;
-  const others = othersOf(room, displayName);
+  const others = room.members.filter((member) => member.displayName !== displayName);
   const decor = roomDecor(room);
-  const gameState = consoleState(room, displayName);
   const lines = tinyMoments(room, displayName, now);
   const streak = togetherStreak(room.members, now);
   const base = `/room/${encodeURIComponent(roomId)}`;
@@ -47,6 +44,10 @@ export function CottageRoom() {
   const whoLine = peopleLine(room.members, displayName, now);
   const headline = cottageHeadline(room.members, streak, now);
   const feed = publicActivity(room, 4);
+  const { seated, overflow } = arrangeSeats(room.members, displayName, now);
+  const openMember = openName
+    ? room.members.find((member) => member.displayName === openName) ?? null
+    : null;
   const firstVisit =
     (me?.visitDays?.length ?? 1) <= 1 &&
     !room.notes.some((item) => item.author === displayName) &&
@@ -76,66 +77,85 @@ export function CottageRoom() {
         </button>
       ) : null}
 
-      <section className="cottage-scene relative overflow-hidden rounded-[32px] px-3 pb-5 pt-4 sm:px-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <img
-            src={sky === "night" ? "/assets/cottage/lazy-cat-den-window-night.png" : "/assets/cottage/lazy-cat-den-window.png"}
-            alt=""
-            width={800}
-            height={800}
-            draggable={false}
-            aria-hidden="true"
-            className="cottage-window-art"
-          />
-          <div className="mt-2 flex items-center gap-2 text-[11px] text-muted">
-            <span className="cottage-lamp" aria-hidden />
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-lg font-extrabold">懒猫小屋</p>
+            <p className="text-sm text-muted">{headline}</p>
+          </div>
+          <p className="text-[11px] text-muted">
             <time dateTime={new Date(now).toISOString()}>
               {dateLabel(now)} {clockLabel(now)} · {sky === "day" ? "白天" : sky === "evening" ? "傍晚" : "夜里"}
             </time>
-            {decor.star ? <span aria-label="连续回来的小星星">✦</span> : null}
-          </div>
+            {decor.star ? <span aria-label="连续回来的小星星"> ✦</span> : null}
+          </p>
         </div>
-
-        <div className="mt-4 space-y-2 text-center">
-          <p className="text-lg font-extrabold">懒猫小屋</p>
-          <p className="text-sm text-muted">{headline}</p>
-          <p className="mx-auto max-w-md text-sm leading-relaxed text-muted">{whoLine}</p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <ComeCloser people={others.map((member) => member.displayName)} />
-            <p className="text-xs text-muted">
-              猫在{" "}
-              <Link href={`${base}/cat`} className="font-bold text-rose-deep">
-                猫
-              </Link>{" "}
-              那一页
-            </p>
-          </div>
+        <p className="text-sm leading-relaxed text-muted">{whoLine}</p>
+        <CottageScene
+          roomId={roomId}
+          selfName={displayName}
+          seated={seated}
+          overflow={overflow}
+          now={now}
+          onOpen={setOpenName}
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <ComeCloser people={others.map((member) => member.displayName)} prefer={closer.name} openToken={closer.token} />
+          <p className="text-xs text-muted">
+            猫在{" "}
+            <Link href={`${base}/cat`} className="font-bold text-rose-deep">
+              猫
+            </Link>{" "}
+            那一页
+          </p>
         </div>
-
-        <div className="mt-4 grid grid-cols-1 gap-3 @min-[28rem]:grid-cols-2 @min-[48rem]:grid-cols-3">
-          <PartnerSpot member={me} selfName={displayName} now={now} emptyLabel="你的位置" self />
-          {others.map((member) => (
-            <PartnerSpot key={member.displayName} member={member} selfName={displayName} now={now} emptyLabel="" />
-          ))}
-          {others.length === 0 ? (
-            <PartnerSpot member={null} selfName={displayName} now={now} emptyLabel="还可以邀请别人" />
-          ) : null}
-        </div>
-
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
+        <div className="flex flex-wrap gap-2">
           <RoomObject href={`${base}/letter`} label="信箱" caption="信箱" icon={<MailIcon sealed={decor.seal} />} />
-          <RoomObject
-            href={`${base}/games`}
-            label={gameState === "waiting" ? "有一局等你" : gameState === "active" ? "正在一起玩" : "游戏"}
-            caption={gameState === "waiting" ? "等你" : gameState === "active" ? "在玩" : "游戏"}
-            icon={<ConsoleIcon waiting={gameState === "waiting"} />}
-            className={gameState === "active" ? "room-object-live" : ""}
-          />
+          <RoomObject href={`${base}/games`} label="游戏" caption="游戏" icon={<ConsoleIcon />} />
           <RoomObject href={`${base}/qa`} label="问答纸" caption="问答" icon={<PaperIcon />} />
           <RoomObject href={`${base}/chat`} label="聊天" caption="聊天" icon={<ChatIcon />} />
         </div>
-        <p className="mt-2 text-center text-sm text-muted">完整地图在上面菜单里。这边只放眼前能做的几件小事。</p>
       </section>
+
+      {openMember ? (
+        <dialog
+          ref={cardRef}
+          className="sheet text-ink"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setOpenName(null);
+          }}
+          onClose={() => setOpenName(null)}
+        >
+          <div className="space-y-3">
+            <div className="flex justify-end">
+              <button type="button" className="text-sm text-muted" onClick={() => setOpenName(null)}>
+                关闭
+              </button>
+            </div>
+            <ProfileCard
+              roomId={roomId}
+              member={openMember}
+              selfName={displayName}
+              mine={openMember.displayName === displayName}
+              onEdit={
+                openMember.displayName === displayName
+                  ? () => {
+                      router.push(`${base}/corner`);
+                    }
+                  : undefined
+              }
+              onCloser={
+                openMember.displayName === displayName
+                  ? undefined
+                  : () => {
+                      setOpenName(null);
+                      setCloser((cur) => ({ token: cur.token + 1, name: openMember.displayName }));
+                    }
+              }
+            />
+          </div>
+        </dialog>
+      ) : null}
 
       {firstVisit ? (
         <section>
@@ -222,57 +242,19 @@ export function CottageRoom() {
   );
 }
 
-function PartnerSpot({
-  member,
-  selfName,
-  now,
-  emptyLabel,
-  self = false,
-}: {
-  member: Member | null;
-  selfName: string;
-  now: number;
-  emptyLabel: string;
-  self?: boolean;
-}) {
-  if (!member) {
-    return (
-      <div className="member-spot rounded-[24px] border border-dashed border-[var(--line)] px-4 py-5 text-center text-sm text-muted">
-        {emptyLabel}
-      </div>
-    );
-  }
-  const feeling = feelingOf(member.statusId);
-  const form = CAT_FORMS.find((item) => item.id === member.profile.formId);
-  const thought = momentText(member);
-  return (
-    <div className="member-spot min-w-0 rounded-[24px] px-4 py-4">
-      <p className="text-[11px] text-muted">{self ? "我" : "小屋里"}</p>
-      <p className="text-lg font-extrabold">{member.displayName}</p>
-      <p className="text-xs text-muted">{presenceLabel(member, selfName, now)}</p>
-      <p className="mt-2 text-sm">{member.profile.signature || "还没写签名"}</p>
-      <p className="mt-1 text-sm text-rose-deep">{feeling ? feeling.zh : "还没说感觉"}</p>
-      {form ? <p className="text-xs text-muted">{form.zh}</p> : null}
-      {thought ? <p className="mt-2 text-sm leading-relaxed">“{thought}”</p> : null}
-    </div>
-  );
-}
-
 function RoomObject({
   href,
   label,
   caption,
   icon,
-  className = "",
 }: {
   href: string;
   label: string;
   caption: string;
   icon: ReactNode;
-  className?: string;
 }) {
   return (
-    <Link href={href} className={`room-object ${className}`} aria-label={label} title={label}>
+    <Link href={href} className="room-object" aria-label={label} title={label}>
       {icon}
       <span className="text-[10px] font-bold text-muted">{caption}</span>
     </Link>
@@ -316,13 +298,12 @@ function ChatIcon() {
   );
 }
 
-function ConsoleIcon({ waiting }: { waiting: boolean }) {
+function ConsoleIcon() {
   return (
     <Glyph>
       <rect x="5" y="10" width="22" height="14" rx="4" fill="#fffaf6" stroke="#c36b76" strokeWidth="1.6" />
       <circle cx="11" cy="17" r="2.2" fill="#d98993" />
       <path d="M19 15.2h4M21 13.2v4" stroke="#c36b76" strokeWidth="1.5" strokeLinecap="round" />
-      {waiting ? <circle cx="25" cy="9" r="2.3" fill="#d98993" /> : null}
     </Glyph>
   );
 }

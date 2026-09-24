@@ -23,6 +23,19 @@ export function isHere(member: Member, now = Date.now()) {
   return now - member.lastSeen < ONLINE_MS;
 }
 
+export function arrangeSeats(members: Member[], selfName = "", now = Date.now()) {
+  const present = hereNow(members, selfName, now).sort((a, b) => {
+    const seen = b.lastSeen - a.lastSeen;
+    if (seen) return seen;
+    return a.displayName.localeCompare(b.displayName, "zh");
+  });
+  const seats = ["window", "sofa", "left", "right"] as const;
+  return {
+    seated: present.slice(0, seats.length).map((member, index) => ({ seat: seats[index], member })),
+    overflow: present.slice(seats.length),
+  };
+}
+
 export function presenceLabel(member: Member, selfName: string, now = Date.now()) {
   const today = dateKey(now);
   if (member.displayName === selfName || isHere(member, now)) return "在这儿";
